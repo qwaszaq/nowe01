@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # Qdrant - Vector Database for Embeddings
+  qdrant:
+    image: qdrant/qdrant:latest
+    container_name: investigation_qdrant
+    ports:
+      - "6333:6333"
+      - "6334:6334"
+    volumes:
+      - ./data/qdrant:/qdrant/storage
+    environment:
+      - QDRANT__LOG_LEVEL=INFO
+    restart: unless-stopped
+
+  # Elasticsearch - Full-Text Search
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    container_name: investigation_elastic
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms1g -Xmx1g"
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    volumes:
+      - ./data/elastic:/usr/share/elasticsearch/data
+    restart: unless-stopped
+
+  # PostgreSQL - Structured Data
+  postgres:
+    image: postgres:15-alpine
+    container_name: investigation_postgres
+    environment:
+      POSTGRES_DB: investigation_db
+      POSTGRES_USER: investigator
+      POSTGRES_PASSWORD: secure_pass_123
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+      - ./scripts/init_postgres.sql:/docker-entrypoint-initdb.d/init.sql
+    restart: unless-stopped
+
+  # Redis - Cache and State Management
+  redis:
+    image: redis:7-alpine
+    container_name: investigation_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+
+  # Neo4j - Graph Database (Optional for relationships)
+  neo4j:
+    image: neo4j:5-community
+    container_name: investigation_neo4j
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    environment:
+      - NEO4J_AUTH=neo4j/password123
+      - NEO4J_PLUGINS=["apoc"]
+      - NEO4J_apoc_export_file_enabled=true
+      - NEO4J_apoc_import_file_enabled=true
+      - NEO4J_dbms_security_procedures_unrestricted=apoc.*
+    volumes:
+      - ./data/neo4j:/data
+    restart: unless-stopped
+
+networks:
+  default:
+    name: investigation_network
