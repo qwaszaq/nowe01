@@ -83,7 +83,16 @@ export default function CaseDetails() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100 relative">
+      {/* Subtle Grid Pattern Background */}
+      <div className="absolute inset-0 opacity-[0.015] pointer-events-none" style={{
+        backgroundImage: `
+          linear-gradient(to right, #000 1px, transparent 1px),
+          linear-gradient(to bottom, #000 1px, transparent 1px)
+        `,
+        backgroundSize: '40px 40px'
+      }}></div>
+      <div className="relative z-10">
       {/* Case Header */}
       <CaseHeader case={caseData} onDelete={handleDelete} />
 
@@ -160,6 +169,7 @@ export default function CaseDetails() {
             )}
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

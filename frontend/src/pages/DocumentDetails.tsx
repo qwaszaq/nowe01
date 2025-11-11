@@ -162,7 +162,7 @@ export default function DocumentDetails() {
             <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
-            <span className="font-semibold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <span className="font-semibold font-mono tracking-wide bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent">
               Szczegóły dokumentu
             </span>
           </nav>
@@ -183,15 +183,15 @@ export default function DocumentDetails() {
 
               {/* Document info */}
               <div className="flex-1 min-w-0">
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent truncate" title={document.filename}>
+                <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent truncate leading-tight" title={document.filename}>
                   {document.filename}
                 </h1>
                 <div className="mt-3 flex items-center gap-3 text-sm">
-                  <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full font-medium">
+                  <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full font-mono text-xs font-semibold tracking-wide">
                     {formatFileSize(document.file_size)}
                   </span>
                   <span className="text-gray-400">•</span>
-                  <span className="px-3 py-1 bg-purple-50 text-purple-700 rounded-full font-medium">
+                  <span className="px-3 py-1 bg-slate-50 text-slate-700 rounded-full font-mono text-xs font-semibold tracking-wide">
                     Przesłano {document.uploaded_at ? formatRelativeTime(document.uploaded_at) : 'niedawno'}
                   </span>
                   <span className="text-gray-400">•</span>
@@ -237,46 +237,46 @@ export default function DocumentDetails() {
             {/* Document metadata (if completed) */}
             {document.status === 'completed' && (
               <div className="bg-white rounded-xl border border-gray-200/60 shadow-md p-6">
-                <h2 className="text-xl font-bold bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent mb-6">
+                <h2 className="text-xl font-bold tracking-tight bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent mb-6">
                   Metadane dokumentu
                 </h2>
                 <dl className="grid grid-cols-2 gap-6">
                   <div className="bg-gradient-to-br from-blue-50 to-blue-100/50 p-4 rounded-lg">
-                    <dt className="text-sm font-semibold text-blue-600 mb-1">Liczba stron</dt>
-                    <dd className="text-2xl font-bold text-gray-900">
+                    <dt className="text-sm font-semibold text-blue-600 mb-1 tracking-wide">Liczba stron</dt>
+                    <dd className="text-2xl font-mono font-bold text-gray-900 tracking-tight">
                       {documentData?.page_count || 'N/A'}
                     </dd>
                   </div>
                   <div className="bg-gradient-to-br from-teal-50 to-teal-100/50 p-4 rounded-lg">
-                    <dt className="text-sm font-semibold text-teal-600 mb-1">Fragmenty semantyczne</dt>
-                    <dd className="text-2xl font-bold text-gray-900">
+                    <dt className="text-sm font-semibold text-teal-600 mb-1 tracking-wide">Fragmenty semantyczne</dt>
+                    <dd className="text-2xl font-mono font-bold text-gray-900 tracking-tight">
                       {document.total_chunks || 0}
                     </dd>
                   </div>
                   <div className="bg-gradient-to-br from-green-50 to-green-100/50 p-4 rounded-lg">
-                    <dt className="text-sm font-semibold text-green-600 mb-1">Data przesłania</dt>
-                    <dd className="text-sm font-bold text-gray-900">
+                    <dt className="text-sm font-semibold text-green-600 mb-1 tracking-wide">Data przesłania</dt>
+                    <dd className="text-sm font-mono font-bold text-gray-900 tracking-tight">
                       {document.uploaded_at ? formatDate(document.uploaded_at) : 'N/A'}
                     </dd>
                   </div>
                   {document.completed_at && (
                     <>
                       <div className="bg-gradient-to-br from-amber-50 to-amber-100/50 p-4 rounded-lg">
-                        <dt className="text-sm font-semibold text-amber-600 mb-1">Data zakończenia</dt>
-                        <dd className="text-sm font-bold text-gray-900">
+                        <dt className="text-sm font-semibold text-amber-600 mb-1 tracking-wide">Data zakończenia</dt>
+                        <dd className="text-sm font-mono font-bold text-gray-900 tracking-tight">
                           {document.completed_at ? formatDate(document.completed_at) : 'N/A'}
                         </dd>
                       </div>
                       <div className="bg-gradient-to-br from-pink-50 to-pink-100/50 p-4 rounded-lg col-span-2">
-                        <dt className="text-sm font-semibold text-pink-600 mb-1">Czas przetwarzania</dt>
-                        <dd className="text-2xl font-bold text-gray-900">
+                        <dt className="text-sm font-semibold text-pink-600 mb-1 tracking-wide">Czas przetwarzania</dt>
+                        <dd className="text-2xl font-mono font-bold text-gray-900 tracking-tight">
                           {document.completed_at && document.uploaded_at ? Math.floor(
                             (new Date(document.completed_at).getTime() -
                               new Date(document.uploaded_at).getTime()) /
                               1000 /
                               60
                           ) : 0}{' '}
-                          minut
+                          <span className="text-base font-sans">minut</span>
                         </dd>
                       </div>
                     </>

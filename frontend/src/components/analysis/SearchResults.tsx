@@ -87,10 +87,10 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
       <div className="mb-6 p-6 bg-gradient-to-r from-slate-50 to-gray-100 rounded-xl border border-slate-200/50 shadow-sm">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-xl font-bold bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent">
-              Wyniki wyszukiwania ({results.length})
+            <h3 className="text-xl font-bold tracking-tight bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent">
+              Wyniki wyszukiwania <span className="font-mono">({results.length})</span>
             </h3>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-gray-600 mt-1 font-mono tracking-wide">
               Wyświetlanie {startIndex + 1}-{Math.min(startIndex + resultsPerPage, results.length)} z{' '}
               {results.length} wyników
             </p>
@@ -141,9 +141,9 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                           d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                         />
                       </svg>
-                      <span className="font-medium">Dokument {result.document_id.substring(0, 8)}...</span>
+                      <span className="font-mono font-semibold text-xs tracking-wider">DOC {result.document_id.substring(0, 8).toUpperCase()}</span>
                       <span className="text-gray-400">•</span>
-                      <span className="font-medium">Strona {result.page_num}</span>
+                      <span className="font-mono font-semibold text-xs tracking-wider">PG {result.page_num}</span>
                     </div>
                   </div>
 

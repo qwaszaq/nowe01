@@ -47,16 +47,25 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100">
+    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100 relative">
+      {/* Subtle Grid Pattern Background */}
+      <div className="absolute inset-0 opacity-[0.015] pointer-events-none" style={{
+        backgroundImage: `
+          linear-gradient(to right, #000 1px, transparent 1px),
+          linear-gradient(to bottom, #000 1px, transparent 1px)
+        `,
+        backgroundSize: '40px 40px'
+      }}></div>
+      <div className="relative z-10">
       {/* Header - Fixed */}
       <div className="fixed top-16 lg:top-0 left-0 lg:left-64 right-0 z-30 bg-white/80 backdrop-blur-sm border-b border-gray-200 shadow-sm">
         <div className="px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent">
+              <h1 className="text-4xl font-bold tracking-tight leading-tight bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent">
                 Investigation Cases
               </h1>
-              <p className="mt-2 text-sm text-gray-600">
+              <p className="mt-2 text-sm text-gray-600 leading-relaxed">
                 Manage and analyze your investigation cases with AI-powered insights
               </p>
             </div>
@@ -77,17 +86,17 @@ export default function Dashboard() {
           <LoadingSkeleton variant="stats" count={4} className="mb-8" />
         ) : dashboardStats ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="group relative bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 shadow-lg hover:shadow-xl transform transition-all duration-300 hover:scale-105 overflow-hidden border border-blue-200/50">
+            <div className="group relative bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 shadow-lg hover:shadow-xl hover:shadow-blue-200/50 transform transition-all duration-300 hover:scale-105 overflow-hidden border border-blue-200/50">
               <div className="absolute inset-0 bg-gradient-to-br from-blue-100 to-blue-200 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <div className="relative z-10">
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-sm font-semibold text-blue-700">Wszystkie sprawy</p>
+                  <p className="text-sm font-semibold text-blue-700 tracking-wide">Wszystkie sprawy</p>
                   <div className="p-3 rounded-xl bg-blue-200/50 backdrop-blur-sm">
                     <FolderIcon className="h-6 w-6 text-blue-600" />
                   </div>
                 </div>
-                <p className="text-4xl font-bold text-blue-900 mb-1">{dashboardStats.totalCases}</p>
-                <div className="flex items-center text-blue-600 text-xs font-medium">
+                <p className="text-4xl font-mono font-bold text-blue-900 mb-1 tracking-tight leading-none">{dashboardStats.totalCases}</p>
+                <div className="flex items-center text-blue-600 text-xs font-medium tracking-wide">
                   <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v3.586L7.707 9.293a1 1 0 00-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 10.586V7z" clipRule="evenodd" />
                   </svg>
@@ -96,17 +105,17 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="group relative bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-2xl p-6 shadow-lg hover:shadow-xl transform transition-all duration-300 hover:scale-105 overflow-hidden border border-emerald-200/50">
+            <div className="group relative bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-2xl p-6 shadow-lg hover:shadow-xl hover:shadow-emerald-200/50 transform transition-all duration-300 hover:scale-105 overflow-hidden border border-emerald-200/50">
               <div className="absolute inset-0 bg-gradient-to-br from-emerald-100 to-emerald-200 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <div className="relative z-10">
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-sm font-semibold text-emerald-700">Aktywne sprawy</p>
+                  <p className="text-sm font-semibold text-emerald-700 tracking-wide">Aktywne sprawy</p>
                   <div className="p-3 rounded-xl bg-emerald-200/50 backdrop-blur-sm">
                     <FolderIcon className="h-6 w-6 text-emerald-600" />
                   </div>
                 </div>
-                <p className="text-4xl font-bold text-emerald-900 mb-1">{dashboardStats.activeCases}</p>
-                <div className="flex items-center text-emerald-600 text-xs font-medium">
+                <p className="text-4xl font-mono font-bold text-emerald-900 mb-1 tracking-tight leading-none">{dashboardStats.activeCases}</p>
+                <div className="flex items-center text-emerald-600 text-xs font-medium tracking-wide">
                   <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
                   </svg>
@@ -115,17 +124,17 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="group relative bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-2xl p-6 shadow-lg hover:shadow-xl transform transition-all duration-300 hover:scale-105 overflow-hidden border border-cyan-200/50">
+            <div className="group relative bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-2xl p-6 shadow-lg hover:shadow-xl hover:shadow-cyan-200/50 transform transition-all duration-300 hover:scale-105 overflow-hidden border border-cyan-200/50">
               <div className="absolute inset-0 bg-gradient-to-br from-cyan-100 to-cyan-200 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <div className="relative z-10">
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-sm font-semibold text-cyan-700">Zakończone</p>
+                  <p className="text-sm font-semibold text-cyan-700 tracking-wide">Zakończone</p>
                   <div className="p-3 rounded-xl bg-cyan-200/50 backdrop-blur-sm">
                     <FolderIcon className="h-6 w-6 text-cyan-600" />
                   </div>
                 </div>
-                <p className="text-4xl font-bold text-cyan-900 mb-1">{dashboardStats.completedCases}</p>
-                <div className="flex items-center text-cyan-600 text-xs font-medium">
+                <p className="text-4xl font-mono font-bold text-cyan-900 mb-1 tracking-tight leading-none">{dashboardStats.completedCases}</p>
+                <div className="flex items-center text-cyan-600 text-xs font-medium tracking-wide">
                   <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                   </svg>
@@ -134,17 +143,17 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="group relative bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-6 shadow-lg hover:shadow-xl transform transition-all duration-300 hover:scale-105 overflow-hidden border border-slate-200/50">
+            <div className="group relative bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-6 shadow-lg hover:shadow-xl hover:shadow-slate-300/50 transform transition-all duration-300 hover:scale-105 overflow-hidden border border-slate-200/50">
               <div className="absolute inset-0 bg-gradient-to-br from-slate-100 to-slate-200 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
               <div className="relative z-10">
                 <div className="flex items-center justify-between mb-3">
-                  <p className="text-sm font-semibold text-slate-700">Zarchiwizowane</p>
+                  <p className="text-sm font-semibold text-slate-700 tracking-wide">Zarchiwizowane</p>
                   <div className="p-3 rounded-xl bg-slate-200/50 backdrop-blur-sm">
                     <FolderIcon className="h-6 w-6 text-slate-600" />
                   </div>
                 </div>
-                <p className="text-4xl font-bold text-slate-900 mb-1">{dashboardStats.archivedCases}</p>
-                <div className="flex items-center text-slate-600 text-xs font-medium">
+                <p className="text-4xl font-mono font-bold text-slate-900 mb-1 tracking-tight leading-none">{dashboardStats.archivedCases}</p>
+                <div className="flex items-center text-slate-600 text-xs font-medium tracking-wide">
                   <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M4 3a2 2 0 100 4h12a2 2 0 100-4H4z" />
                     <path fillRule="evenodd" d="M3 8h14v7a2 2 0 01-2 2H5a2 2 0 01-2-2V8zm5 3a1 1 0 011-1h2a1 1 0 110 2H9a1 1 0 01-1-1z" clipRule="evenodd" />
@@ -201,6 +210,7 @@ export default function Dashboard() {
         onClose={() => setCaseToDelete(null)}
         onSuccess={handleDeleteSuccess}
       />
+      </div>
     </div>
   );
 }

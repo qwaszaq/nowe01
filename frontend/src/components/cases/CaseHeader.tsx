@@ -63,25 +63,25 @@ export function CaseHeader({ case: caseData, onDelete }: CaseHeaderProps) {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-2">
-                    <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">{caseData.name}</h1>
+                    <h1 className="text-3xl font-bold tracking-tight leading-tight bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">{caseData.name}</h1>
                     <StatusBadge status={caseData.status} />
                   </div>
                   {caseData.description && (
                     <p className="text-gray-600 max-w-3xl leading-relaxed">{caseData.description}</p>
                   )}
                   <div className="flex items-center gap-3 mt-3 text-sm">
-                    <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full font-medium">
+                    <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full font-mono text-xs font-semibold tracking-wider">
                       Created {format(new Date(caseData.created_at), 'MMM d, yyyy')}
                     </span>
                     <span className="text-gray-400">•</span>
-                    <span className="px-3 py-1 bg-purple-50 text-purple-700 rounded-full font-medium">
+                    <span className="px-3 py-1 bg-slate-100 text-slate-700 rounded-full font-mono text-xs font-semibold tracking-wider">
                       Updated {format(new Date(caseData.updated_at), 'MMM d, yyyy')}
                     </span>
                     {caseData.document_count !== undefined && (
                       <>
                         <span className="text-gray-400">•</span>
-                        <span className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full font-medium">
-                          {caseData.document_count} documents
+                        <span className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full font-mono text-xs font-semibold tracking-wider">
+                          {caseData.document_count} docs
                         </span>
                       </>
                     )}

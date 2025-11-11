@@ -12,8 +12,10 @@ import {
   Bars3Icon,
   XMarkIcon,
   DocumentMagnifyingGlassIcon,
+  MagnifyingGlassIcon,
 } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
+import { GlobalSearch, useGlobalSearch } from '../components/search/GlobalSearch';
 
 
 interface NavItem {
@@ -34,6 +36,7 @@ const navigation: NavItem[] = [
 export default function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
+  const search = useGlobalSearch();
 
   const isActiveRoute = (item: NavItem) => {
     if (item.exact) {
@@ -87,8 +90,9 @@ export default function MainLayout() {
       >
         <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200/60 bg-white/80 backdrop-blur-sm">
           <Link to="/" className="flex items-center space-x-3 group">
-            <div className="p-2 rounded-xl bg-gradient-to-br from-slate-700 to-slate-900 shadow-lg group-hover:shadow-xl transition-all duration-200 group-hover:scale-105">
-              <DocumentMagnifyingGlassIcon className="w-6 h-6 text-white" />
+            <div className="relative p-2 rounded-xl bg-gradient-to-br from-slate-700 to-slate-900 shadow-lg group-hover:shadow-xl group-hover:shadow-slate-400/50 transition-all duration-200 group-hover:scale-105 overflow-hidden">
+              <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 to-purple-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              <DocumentMagnifyingGlassIcon className="w-6 h-6 text-white relative z-10" />
             </div>
             <div>
               <h1 className="text-lg font-bold bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent">IIP</h1>
@@ -103,6 +107,7 @@ export default function MainLayout() {
           </button>
         </div>
         <nav className="px-4 py-4 space-y-2">
+          {/* Navigation Items */}
           {navigation.map((item) => {
             const isActive = isActiveRoute(item);
             const colorClasses = getColorClasses(item.color, isActive);
@@ -121,6 +126,29 @@ export default function MainLayout() {
               </Link>
             );
           })}
+
+          {/* Divider */}
+          <div className="pt-4 pb-2">
+            <div className="h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+          </div>
+
+          {/* Global Search Button - Mobile */}
+          <button
+            onClick={() => {
+              search.open();
+              setSidebarOpen(false);
+            }}
+            className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-gray-600 bg-white hover:bg-gradient-to-r hover:from-slate-50 hover:to-gray-100 rounded-xl border-2 border-gray-200 hover:border-slate-300 transition-all duration-200 shadow-sm group"
+          >
+            <div className="flex items-center">
+              <MagnifyingGlassIcon className="w-5 h-5 mr-3 text-slate-600 group-hover:text-slate-700" />
+              <span className="text-gray-600 group-hover:text-slate-800">Search...</span>
+            </div>
+            <kbd className="inline-flex items-center gap-0.5 px-2 py-1 text-xs font-mono font-semibold text-slate-600 bg-gray-100 rounded border border-gray-300">
+              <span>⌘</span>
+              <span>K</span>
+            </kbd>
+          </button>
         </nav>
       </div>
 
@@ -130,8 +158,9 @@ export default function MainLayout() {
           {/* Logo */}
           <div className="flex items-center h-16 px-6 border-b border-gray-200/60 bg-white/80 backdrop-blur-sm">
             <Link to="/" className="flex items-center space-x-3 group">
-              <div className="p-2 rounded-xl bg-gradient-to-br from-slate-700 to-slate-900 shadow-lg group-hover:shadow-xl transition-all duration-200 group-hover:scale-105">
-                <DocumentMagnifyingGlassIcon className="w-6 h-6 text-white" />
+              <div className="relative p-2 rounded-xl bg-gradient-to-br from-slate-700 to-slate-900 shadow-lg group-hover:shadow-xl group-hover:shadow-slate-400/50 transition-all duration-200 group-hover:scale-105 overflow-hidden">
+                <div className="absolute inset-0 bg-gradient-to-tr from-blue-600/20 to-purple-600/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <DocumentMagnifyingGlassIcon className="w-6 h-6 text-white relative z-10" />
               </div>
               <div>
                 <h1 className="text-lg font-bold bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent">IIP</h1>
@@ -142,6 +171,7 @@ export default function MainLayout() {
 
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto">
+            {/* Navigation Items */}
             {navigation.map((item) => {
               const isActive = isActiveRoute(item);
               const colorClasses = getColorClasses(item.color, isActive);
@@ -159,6 +189,26 @@ export default function MainLayout() {
                 </Link>
               );
             })}
+
+            {/* Divider */}
+            <div className="pt-4 pb-2">
+              <div className="h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
+            </div>
+
+            {/* Global Search Button */}
+            <button
+              onClick={search.open}
+              className="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-gray-600 bg-white hover:bg-gradient-to-r hover:from-slate-50 hover:to-gray-100 rounded-xl border-2 border-gray-200 hover:border-slate-300 transition-all duration-200 shadow-sm hover:shadow-md group"
+            >
+              <div className="flex items-center">
+                <MagnifyingGlassIcon className="w-5 h-5 mr-3 text-slate-600 group-hover:text-slate-700" />
+                <span className="text-gray-600 group-hover:text-slate-800">Search...</span>
+              </div>
+              <kbd className="hidden lg:inline-flex items-center gap-0.5 px-2 py-1 text-xs font-mono font-semibold text-slate-600 bg-gray-100 rounded border border-gray-300">
+                <span>⌘</span>
+                <span>K</span>
+              </kbd>
+            </button>
           </nav>
 
           {/* Footer */}
@@ -174,19 +224,27 @@ export default function MainLayout() {
       {/* Main content area */}
       <div className="lg:pl-64">
         {/* Mobile header */}
-        <div className="sticky top-0 z-40 flex items-center h-16 px-4 bg-white/90 backdrop-blur-sm border-b border-gray-200/60 shadow-sm lg:hidden">
+        <div className="sticky top-0 z-40 flex items-center justify-between h-16 px-4 bg-white/90 backdrop-blur-sm border-b border-gray-200/60 shadow-sm lg:hidden">
+          <div className="flex items-center">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="p-2 mr-2 rounded-lg hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all"
+            >
+              <Bars3Icon className="w-6 h-6 text-gray-600" />
+            </button>
+            <Link to="/" className="flex items-center space-x-3 group">
+              <div className="p-1.5 rounded-lg bg-gradient-to-br from-slate-700 to-slate-900 shadow-md group-hover:shadow-lg transition-all duration-200">
+                <DocumentMagnifyingGlassIcon className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-lg font-bold bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent">IIP</span>
+            </Link>
+          </div>
           <button
-            onClick={() => setSidebarOpen(true)}
-            className="p-2 mr-2 rounded-lg hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 transition-all"
+            onClick={search.open}
+            className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 transition-all"
           >
-            <Bars3Icon className="w-6 h-6 text-gray-600" />
+            <MagnifyingGlassIcon className="w-5 h-5 text-slate-700" />
           </button>
-          <Link to="/" className="flex items-center space-x-3 group">
-            <div className="p-1.5 rounded-lg bg-gradient-to-br from-slate-700 to-slate-900 shadow-md group-hover:shadow-lg transition-all duration-200">
-              <DocumentMagnifyingGlassIcon className="w-5 h-5 text-white" />
-            </div>
-            <span className="text-lg font-bold bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent">IIP</span>
-          </Link>
         </div>
 
         {/* Page content */}
@@ -194,6 +252,9 @@ export default function MainLayout() {
           <Outlet />
         </main>
       </div>
+
+      {/* Global Search Modal */}
+      <GlobalSearch isOpen={search.isOpen} onClose={search.close} />
     </div>
   );
 }

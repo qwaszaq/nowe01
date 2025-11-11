@@ -21,6 +21,7 @@ import {
   getStageDescription,
   type DocumentStatus,
 } from './DocumentStatusBadge';
+import { ScanLineEffect } from '../ui/ScanLineEffect';
 
 export interface DocumentStatusData {
   document_id: string;
@@ -79,7 +80,10 @@ export function DocumentStatusCard({
   };
 
   return (
-    <div className={cn('bg-white rounded-lg border border-gray-200 shadow-sm', className)}>
+    <div className={cn('bg-white rounded-lg border border-gray-200 shadow-sm relative overflow-hidden', className)}>
+      {/* Scan-line effect for processing states */}
+      <ScanLineEffect active={isProcessing} />
+
       {/* Header */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-start justify-between gap-4">
