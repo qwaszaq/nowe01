@@ -13,6 +13,7 @@ import {
   XMarkIcon,
   DocumentMagnifyingGlassIcon,
   MagnifyingGlassIcon,
+  ChartBarIcon,
 } from '@heroicons/react/24/outline';
 import { cn } from '@/lib/utils';
 import { GlobalSearch, useGlobalSearch } from '../components/search/GlobalSearch';
@@ -29,7 +30,8 @@ interface NavItem {
 const navigation: NavItem[] = [
   { name: 'Dashboard', href: '/', icon: HomeIcon, exact: true, color: 'blue' },
   { name: 'Cases', href: '/cases', icon: FolderIcon, color: 'slate' },
-  { name: 'Analysis', href: '/analysis', icon: DocumentMagnifyingGlassIcon, color: 'teal' },
+  { name: 'BI Analytics', href: '/analytics', icon: ChartBarIcon, color: 'teal' },
+  { name: 'Document Analysis', href: '/analysis', icon: DocumentMagnifyingGlassIcon, color: 'purple' },
   { name: 'Settings', href: '/settings', icon: Cog6ToothIcon, color: 'gray' },
 ];
 
@@ -61,6 +63,11 @@ export default function MainLayout() {
         active: 'bg-gradient-to-r from-teal-50 to-teal-100 text-teal-800 border-l-4 border-teal-600',
         inactive: 'text-gray-700 hover:bg-gradient-to-r hover:from-teal-50/50 hover:to-teal-100/50',
         icon: isActive ? 'text-teal-600' : 'text-gray-500'
+      },
+      purple: {
+        active: 'bg-gradient-to-r from-purple-50 to-purple-100 text-purple-800 border-l-4 border-purple-600',
+        inactive: 'text-gray-700 hover:bg-gradient-to-r hover:from-purple-50/50 hover:to-purple-100/50',
+        icon: isActive ? 'text-purple-600' : 'text-gray-500'
       },
       gray: {
         active: 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-800 border-l-4 border-gray-600',

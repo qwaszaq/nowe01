@@ -11,6 +11,7 @@ import Dashboard from './pages/Dashboard';
 import CaseDetails from './pages/CaseDetails';
 import DocumentDetails from './pages/DocumentDetails';
 import AnalysisViewer from './pages/AnalysisViewer';
+import BIDashboard from './pages/BIDashboard';
 import NotFound from './pages/NotFound';
 
 function App() {
@@ -32,6 +33,10 @@ function App() {
           path="cases/:caseId/documents/:documentId/analysis"
           element={<AnalysisViewer />}
         />
+
+        {/* BI Analytics Dashboard */}
+        <Route path="analytics" element={<BIDashboard />} />
+        <Route path="analytics/:caseId" element={<BIDashboard />} />
 
         {/* 404 Not Found */}
         <Route path="404" element={<NotFound />} />
