@@ -13,6 +13,7 @@ from fastapi.exceptions import RequestValidationError
 
 from src.config.settings import settings
 from src.api.routes import documents, analysis_router, cases
+from src.api.routes import bi_analytics
 from src.orchestration.analysis_flow import AnalysisFlow
 from src.storage import PostgresStore
 
@@ -113,6 +114,10 @@ def create_app() -> FastAPI:
     )
     app.include_router(
         analysis_router,
+        prefix=settings.api_prefix
+    )
+    app.include_router(
+        bi_analytics.router,
         prefix=settings.api_prefix
     )
 
