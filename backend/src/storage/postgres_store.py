@@ -214,8 +214,19 @@ class PostgresStore:
         status: str,
         **kwargs
     ) -> bool:
-        """Update document processing status"""
+        """
+        Update document processing status and additional fields
+
+        Accepts additional fields via kwargs:
+        - pages_count: Number of pages in document
+        - metadata: Additional metadata dictionary
+        """
         with self.get_cursor() as cursor:
+            # Build update fields
+            update_fields = ['status = %s']
+            update_values = [status]
+
+            # Add timestamp field based on status
             timestamp_field = None
             if status == 'processing':
                 timestamp_field = 'processing_started_at'
@@ -223,19 +234,31 @@ class PostgresStore:
                 timestamp_field = 'processing_completed_at'
 
             if timestamp_field:
-                cursor.execute(
-                    f"""
-                    UPDATE documents
-                    SET status = %s, {timestamp_field} = %s
-                    WHERE id = %s
-                    """,
-                    (status, datetime.now(), str(document_id))
-                )
-            else:
-                cursor.execute(
-                    "UPDATE documents SET status = %s WHERE id = %s",
-                    (status, str(document_id))
-                )
+                update_fields.append(f'{timestamp_field} = %s')
+                update_values.append(datetime.now())
+
+            # Add pages_count if provided
+            if 'pages_count' in kwargs:
+                update_fields.append('pages_count = %s')
+                update_values.append(kwargs['pages_count'])
+
+            # Add metadata if provided
+            if 'metadata' in kwargs:
+                update_fields.append('metadata = %s')
+                update_values.append(Json(kwargs['metadata']))
+
+            # Add document_id for WHERE clause
+            update_values.append(str(document_id))
+
+            # Execute update
+            cursor.execute(
+                f"""
+                UPDATE documents
+                SET {', '.join(update_fields)}
+                WHERE id = %s
+                """,
+                update_values
+            )
 
             return cursor.rowcount > 0
 
@@ -450,6 +473,116 @@ class PostgresStore:
                 (str(document_id),)
             )
             return cursor.fetchall()
+
+    # =========================================================================
+    # CASE ACTIVITIES
+    # =========================================================================
+
+    def get_case_activities(self, case_id: UUID, limit: int = 50) -> List[Dict]:
+        """
+        Get activity timeline for a case by combining case and document events
+
+        Returns a chronological list of activities including:
+        - Case creation/updates
+        - Document uploads
+        - Document processing status changes
+        """
+        activities = []
+
+        with self.get_cursor() as cursor:
+            # Get case creation event
+            cursor.execute(
+                """
+                SELECT id, name, created_at, updated_at
+                FROM cases
+                WHERE id = %s
+                """,
+                (str(case_id),)
+            )
+            case = cursor.fetchone()
+
+            if case:
+                # Case created activity
+                activities.append({
+                    'id': f"case_created_{case['id']}",
+                    'type': 'case_created',
+                    'title': 'Case Created',
+                    'description': f"Case '{case['name']}' was created",
+                    'timestamp': case['created_at'].isoformat(),
+                    'metadata': {}
+                })
+
+                # Case updated activity (if different from created)
+                if case['updated_at'] and case['updated_at'] != case['created_at']:
+                    activities.append({
+                        'id': f"case_updated_{case['id']}",
+                        'type': 'case_updated',
+                        'title': 'Case Updated',
+                        'description': f"Case '{case['name']}' was modified",
+                        'timestamp': case['updated_at'].isoformat(),
+                        'metadata': {}
+                    })
+
+            # Get document activities
+            cursor.execute(
+                """
+                SELECT id, original_filename, status, created_at,
+                       processing_started_at, processing_completed_at,
+                       pages_count, file_size
+                FROM documents
+                WHERE case_id = %s
+                ORDER BY created_at DESC
+                """,
+                (str(case_id),)
+            )
+            documents = cursor.fetchall()
+
+            for doc in documents:
+                # Document uploaded
+                activities.append({
+                    'id': f"doc_uploaded_{doc['id']}",
+                    'type': 'document_uploaded',
+                    'title': 'Document Uploaded',
+                    'description': f"Uploaded document: {doc['original_filename']}",
+                    'timestamp': doc['created_at'].isoformat(),
+                    'metadata': {
+                        'filename': doc['original_filename'],
+                        'size': f"{doc['file_size'] / 1024:.1f} KB" if doc['file_size'] else 'Unknown'
+                    }
+                })
+
+                # Document processed
+                if doc['status'] == 'completed' and doc['processing_completed_at']:
+                    activities.append({
+                        'id': f"doc_processed_{doc['id']}",
+                        'type': 'document_processed',
+                        'title': 'Document Processed',
+                        'description': f"Successfully processed: {doc['original_filename']}",
+                        'timestamp': doc['processing_completed_at'].isoformat(),
+                        'metadata': {
+                            'filename': doc['original_filename'],
+                            'pages': str(doc['pages_count']) if doc['pages_count'] else 'Unknown'
+                        }
+                    })
+
+                # Document failed
+                elif doc['status'] == 'failed' and doc['processing_completed_at']:
+                    activities.append({
+                        'id': f"doc_failed_{doc['id']}",
+                        'type': 'document_failed',
+                        'title': 'Processing Failed',
+                        'description': f"Failed to process: {doc['original_filename']}",
+                        'timestamp': doc['processing_completed_at'].isoformat(),
+                        'metadata': {
+                            'filename': doc['original_filename']
+                        }
+                    })
+
+        # Sort by timestamp descending (most recent first)
+        activities.sort(key=lambda x: x['timestamp'], reverse=True)
+
+        # Apply limit
+        return activities[:limit]
 
     # =========================================================================
     # HEALTH CHECK

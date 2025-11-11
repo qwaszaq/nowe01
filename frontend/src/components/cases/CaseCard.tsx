@@ -24,8 +24,9 @@ export function CaseCard({ case: caseItem, onEdit, onDelete, onArchive }: CaseCa
   };
 
   return (
-    <div className="bg-white border border-gray-200/60 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-blue-200/60 overflow-hidden group">
-      <Link to={`/cases/${caseItem.id}`} className="block p-6">
+    <div className="relative bg-gradient-to-br from-blue-50 via-white to-cyan-50 border border-blue-200/60 rounded-xl shadow-xl hover:shadow-2xl hover:shadow-blue-300/40 transition-all duration-500 hover:-translate-y-2 hover:border-blue-300/80 overflow-hidden group">
+      <div className="absolute inset-0 bg-gradient-to-br from-blue-100/30 to-cyan-100/30 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+      <Link to={`/cases/${caseItem.id}`} className="block p-6 relative z-10">
         <div className="flex items-start justify-between mb-3">
           <h3 className="text-lg font-bold text-gray-900 group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 group-hover:bg-clip-text group-hover:text-transparent transition-all line-clamp-1">
             {caseItem.name}
@@ -52,7 +53,7 @@ export function CaseCard({ case: caseItem, onEdit, onDelete, onArchive }: CaseCa
       </Link>
 
       {/* Action Menu */}
-      <div className="border-t border-gray-100 px-6 py-3 bg-gradient-to-r from-gray-50 to-blue-50/30">
+      <div className="border-t border-blue-100 px-6 py-3 bg-gradient-to-r from-blue-50/50 to-cyan-50/50 relative z-10">
         <div className="flex items-center justify-between">
           <Link
             to={`/cases/${caseItem.id}`}

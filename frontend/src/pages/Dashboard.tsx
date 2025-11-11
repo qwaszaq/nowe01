@@ -47,31 +47,31 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100 relative">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-gray-100 relative">
       {/* Subtle Grid Pattern Background */}
-      <div className="absolute inset-0 opacity-[0.015] pointer-events-none" style={{
+      <div className="absolute inset-0 opacity-[0.02] pointer-events-none" style={{
         backgroundImage: `
-          linear-gradient(to right, #000 1px, transparent 1px),
-          linear-gradient(to bottom, #000 1px, transparent 1px)
+          linear-gradient(to right, #1e40af 1px, transparent 1px),
+          linear-gradient(to bottom, #1e40af 1px, transparent 1px)
         `,
         backgroundSize: '40px 40px'
       }}></div>
       <div className="relative z-10">
-      {/* Header - Fixed */}
-      <div className="fixed top-16 lg:top-0 left-0 lg:left-64 right-0 z-30 bg-white/80 backdrop-blur-sm border-b border-gray-200 shadow-sm">
-        <div className="px-4 sm:px-6 lg:px-8 py-6">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-slate-700 to-slate-900 text-white shadow-xl">
+        <div className="px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-4xl font-bold tracking-tight leading-tight bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent">
+              <h1 className="text-4xl font-bold tracking-tight">
                 Investigation Cases
               </h1>
-              <p className="mt-2 text-sm text-gray-600 leading-relaxed">
+              <p className="mt-2 text-slate-200">
                 Manage and analyze your investigation cases with AI-powered insights
               </p>
             </div>
             <button
               onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center px-6 py-3 border border-transparent rounded-xl shadow-lg text-sm font-semibold text-white bg-gradient-to-r from-slate-700 to-slate-900 hover:from-slate-800 hover:to-black transform transition-all duration-200 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500"
+              className="inline-flex items-center px-6 py-3 border-2 border-white/30 rounded-xl shadow-2xl shadow-white/20 text-sm font-semibold text-white bg-white/10 hover:bg-white/20 hover:border-white/50 hover:shadow-white/30 transform transition-all duration-300 hover:scale-110 active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-white/50 animate-pulse-subtle"
             >
               <PlusIcon className="h-5 w-5 mr-2" />
               Utwórz nową sprawę
@@ -80,14 +80,14 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Dashboard Stats - Add top padding to account for fixed header */}
-      <div className="pt-48 lg:pt-32 px-4 sm:px-6 lg:px-8 pb-8 max-w-full">
+      {/* Dashboard Stats */}
+      <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-full">
         {statsLoading ? (
           <LoadingSkeleton variant="stats" count={4} className="mb-8" />
         ) : dashboardStats ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            <div className="group relative bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 shadow-lg hover:shadow-xl hover:shadow-blue-200/50 transform transition-all duration-300 hover:scale-105 overflow-hidden border border-blue-200/50">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-100 to-blue-200 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="group relative bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:shadow-blue-300/60 transform transition-all duration-500 hover:scale-105 hover:-translate-y-2 overflow-hidden border border-blue-200/50 animate-slide-up-1">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-100 to-blue-200 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               <div className="relative z-10">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-sm font-semibold text-blue-700 tracking-wide">Wszystkie sprawy</p>
@@ -105,8 +105,8 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="group relative bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-2xl p-6 shadow-lg hover:shadow-xl hover:shadow-emerald-200/50 transform transition-all duration-300 hover:scale-105 overflow-hidden border border-emerald-200/50">
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-100 to-emerald-200 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="group relative bg-gradient-to-br from-emerald-50 to-emerald-100 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:shadow-emerald-300/60 transform transition-all duration-500 hover:scale-105 hover:-translate-y-2 overflow-hidden border border-emerald-200/50 animate-slide-up-2">
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-100 to-emerald-200 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               <div className="relative z-10">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-sm font-semibold text-emerald-700 tracking-wide">Aktywne sprawy</p>
@@ -124,8 +124,8 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="group relative bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-2xl p-6 shadow-lg hover:shadow-xl hover:shadow-cyan-200/50 transform transition-all duration-300 hover:scale-105 overflow-hidden border border-cyan-200/50">
-              <div className="absolute inset-0 bg-gradient-to-br from-cyan-100 to-cyan-200 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="group relative bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:shadow-cyan-300/60 transform transition-all duration-500 hover:scale-105 hover:-translate-y-2 overflow-hidden border border-cyan-200/50 animate-slide-up-3">
+              <div className="absolute inset-0 bg-gradient-to-br from-cyan-100 to-cyan-200 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               <div className="relative z-10">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-sm font-semibold text-cyan-700 tracking-wide">Zakończone</p>
@@ -143,8 +143,8 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="group relative bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-6 shadow-lg hover:shadow-xl hover:shadow-slate-300/50 transform transition-all duration-300 hover:scale-105 overflow-hidden border border-slate-200/50">
-              <div className="absolute inset-0 bg-gradient-to-br from-slate-100 to-slate-200 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+            <div className="group relative bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-6 shadow-xl hover:shadow-2xl hover:shadow-slate-400/60 transform transition-all duration-500 hover:scale-105 hover:-translate-y-2 overflow-hidden border border-slate-200/50 animate-slide-up-4">
+              <div className="absolute inset-0 bg-gradient-to-br from-slate-100 to-slate-200 opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
               <div className="relative z-10">
                 <div className="flex items-center justify-between mb-3">
                   <p className="text-sm font-semibold text-slate-700 tracking-wide">Zarchiwizowane</p>

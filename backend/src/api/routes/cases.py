@@ -609,3 +609,63 @@ async def get_case_stats(case_id: UUID) -> CaseStats:
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to retrieve case statistics: {str(e)}"
         )
+
+
+@router.get(
+    "/{case_id}/activities",
+    summary="Get Case Activity Log",
+    description="Retrieve chronological activity timeline for a case including document uploads and processing events"
+)
+async def get_case_activities(
+    case_id: str,
+    limit: int = Query(50, ge=1, le=100, description="Maximum number of activities to return")
+):
+    """
+    Get activity timeline for a case
+
+    Returns a chronological list of all activities including:
+    - Case creation and updates
+    - Document uploads
+    - Document processing status changes
+    - And more
+
+    **Parameters:**
+    - **case_id**: Case UUID
+    - **limit**: Maximum number of activities (default: 50, max: 100)
+
+    **Returns:**
+    - List of activity objects with type, title, description, timestamp, and metadata
+    """
+    try:
+        logger.info(f"Retrieving activities for case: {case_id}")
+
+        # Verify case exists
+        case = postgres_store.get_case(UUID(case_id))
+        if not case:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"Case not found: {case_id}"
+            )
+
+        # Get activities
+        activities = postgres_store.get_case_activities(UUID(case_id), limit=limit)
+
+        return {
+            "case_id": case_id,
+            "activities": activities,
+            "total": len(activities)
+        }
+
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid case ID format: {str(e)}"
+        )
+    except Exception as e:
+        logger.error(f"Failed to get activities for case {case_id}: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to retrieve case activities: {str(e)}"
+        )

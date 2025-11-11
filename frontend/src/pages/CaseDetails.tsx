@@ -13,6 +13,7 @@ import { CaseStats } from '../components/cases/CaseStats';
 import { DocumentUpload } from '../components/documents/DocumentUpload';
 import { DocumentList } from '../components/documents/DocumentList';
 import { SemanticSearch } from '../components/analysis/SemanticSearch';
+import { ActivityLog } from '../components/activity/ActivityLog';
 import { LoadingSkeleton, Spinner } from '../components/ui/LoadingSkeleton';
 import { ErrorMessage, EmptyState } from '../components/ui/ErrorMessage';
 
@@ -96,8 +97,8 @@ export default function CaseDetails() {
       {/* Case Header */}
       <CaseHeader case={caseData} onDelete={handleDelete} />
 
-      {/* Main Content - Add top padding to account for fixed header */}
-      <div className="pt-64 lg:pt-48 px-4 sm:px-6 lg:px-8 pb-8 max-w-7xl mx-auto">
+      {/* Main Content */}
+      <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-7xl mx-auto">
         {/* Stats */}
         <div className="mb-8">
           <CaseStats caseId={caseData.id} />
@@ -161,11 +162,7 @@ export default function CaseDetails() {
             )}
 
             {activeTab === 'activity' && (
-              <EmptyState
-                title="Activity Log Coming Soon"
-                description="Track all activities, changes, and events related to this case."
-                icon={ClockIcon}
-              />
+              <ActivityLog caseId={caseId!} />
             )}
           </div>
         </div>

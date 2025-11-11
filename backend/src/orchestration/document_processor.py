@@ -344,25 +344,25 @@ class DocumentProcessor:
                 )
 
                 # Update document metadata in Postgres
-                self.postgres_store.update_document_status(
-                    document_id=document_id,
-                    status='completed'
-                )
-
-                # Update with extracted metadata
-                update_fields = {
-                    'pages_count': extracted['extraction_stats']['total_pages'],
-                    'metadata': {
-                        **document_metadata.get('metadata', {}),
-                        'extraction_stats': extracted['extraction_stats'],
-                        'chunk_stats': chunk_stats,
-                        'processing_completed_at': datetime.now().isoformat()
-                    }
+                # Prepare metadata
+                metadata = {
+                    **document_metadata.get('metadata', {}),
+                    'extraction_stats': extracted['extraction_stats'],
+                    'chunk_stats': chunk_stats,
+                    'processing_completed_at': datetime.now().isoformat()
                 }
 
                 # Store table info if tables were extracted
                 if extracted.get('tables'):
-                    update_fields['metadata']['tables_count'] = len(extracted['tables'])
+                    metadata['tables_count'] = len(extracted['tables'])
+
+                # Update document with status, pages_count, and metadata
+                self.postgres_store.update_document_status(
+                    document_id=document_id,
+                    status='completed',
+                    pages_count=extracted['extraction_stats']['total_pages'],
+                    metadata=metadata
+                )
 
                 stages['storage'] = {
                     'status': 'completed',

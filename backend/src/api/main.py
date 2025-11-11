@@ -132,6 +132,60 @@ async def lifespan(app: FastAPI):
         logger.warning(f"⚠ Elasticsearch initialization failed: {e} (search disabled)")
         elastic_store = None
 
+    # Initialize Analysis Flow (for semantic search and document analysis)
+    analysis_flow = None
+    try:
+        logger.info("Initializing Analysis Flow...")
+        from src.orchestration.analysis_flow import AnalysisFlow
+        from src.core.search.semantic_search import SemanticSearch
+        from src.core.embeddings.e5_embeddings import E5Embeddings
+        from src.core.llm.micro_agents import MicroAgents
+        from src.api.routes import analysis as analysis_routes
+
+        # Initialize E5 Embeddings
+        e5_embeddings = E5Embeddings(
+            endpoint=settings.llm_endpoint,
+            model=settings.embedding_model,
+            dimensions=settings.embedding_dimension,
+            timeout=60,
+            max_retries=3
+        )
+
+        # Initialize SemanticSearch
+        semantic_search = SemanticSearch(
+            embeddings_service=e5_embeddings,
+            qdrant_store=qdrant_store
+        )
+
+        # Initialize LM Studio Client for micro-agents
+        from src.core.llm.lm_studio_client import LMStudioClient
+        llm_client = LMStudioClient(
+            endpoint=settings.llm_endpoint,
+            timeout=settings.llm_timeout,
+            max_retries=settings.llm_max_retries
+        )
+
+        # Initialize MicroAgents
+        micro_agents = MicroAgents(redis_client=redis_store, llm_client=llm_client)
+
+        # Initialize AnalysisFlow with all components
+        analysis_flow = AnalysisFlow(
+            semantic_search=semantic_search,
+            micro_agents=micro_agents,
+            postgres_store=postgres_store,
+            redis_store=redis_store
+        )
+
+        # Inject dependencies into analysis routes
+        analysis_routes.set_dependencies(
+            analysis_flow=analysis_flow,
+            postgres_store=postgres_store
+        )
+        logger.info("✓ Analysis Flow initialized")
+    except Exception as e:
+        logger.warning(f"⚠ Analysis Flow initialization failed: {e} (analysis features limited)")
+        analysis_flow = None
+
     logger.info("=" * 80)
     logger.info(f"Application startup complete - listening on {settings.api_host}:{settings.api_port}")
     logger.info("=" * 80)
@@ -141,6 +195,7 @@ async def lifespan(app: FastAPI):
     app.state.qdrant = qdrant_store
     app.state.redis = redis_store
     app.state.elastic = elastic_store
+    app.state.analysis_flow = analysis_flow
 
     yield
 
@@ -490,19 +545,20 @@ async def health_check() -> Dict[str, Any]:
 
 
 # ============================================================================
-# ROUTER IMPORTS (Prepared for future implementation)
+# ROUTER IMPORTS
 # ============================================================================
 
-# TODO: Implement API routes
-# from src.api.routes.cases import router as cases_router
-# from src.api.routes.documents import router as documents_router
-# from src.api.routes.analysis import router as analysis_router
-# from src.api.routes.search import router as search_router
-#
-# app.include_router(cases_router, prefix=settings.api_prefix, tags=["Cases"])
-# app.include_router(documents_router, prefix=settings.api_prefix, tags=["Documents"])
-# app.include_router(analysis_router, prefix=settings.api_prefix, tags=["Analysis"])
-# app.include_router(search_router, prefix=settings.api_prefix, tags=["Search"])
+from src.api.routes.cases import router as cases_router
+from src.api.routes.documents import router as documents_router
+from src.api.routes.analysis import router as analysis_router
+from src.api.routes.bi_analytics import router as bi_analytics_router
+from src.api.routes.system import router as system_router
+
+app.include_router(cases_router, prefix=settings.api_prefix)
+app.include_router(documents_router, prefix=settings.api_prefix)
+app.include_router(analysis_router, prefix=settings.api_prefix)
+app.include_router(bi_analytics_router, prefix=settings.api_prefix)
+app.include_router(system_router, prefix=settings.api_prefix)
 
 
 # ============================================================================

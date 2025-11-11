@@ -42,7 +42,7 @@ export function CaseHeader({ case: caseData, onDelete }: CaseHeaderProps) {
 
   return (
     <>
-      <div className="fixed top-16 lg:top-0 left-0 lg:left-64 right-0 z-30 bg-white/80 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200 shadow-sm">
         <div className="px-4 sm:px-6 lg:px-8 py-4">
           {/* Breadcrumb */}
           <nav className="flex items-center text-sm text-gray-600 mb-4">
