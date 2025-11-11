@@ -72,56 +72,56 @@ export function CasePagination({
   }
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 flex items-center justify-between sm:px-6 mt-6">
+    <div className="bg-gradient-to-r from-gray-50 to-blue-50/30 border border-gray-200/60 rounded-xl px-4 py-4 flex items-center justify-between sm:px-6 mt-6 shadow-sm">
       {/* Mobile View */}
       <div className="flex-1 flex justify-between sm:hidden">
         <button
           onClick={() => onPageChange(currentPage - 1)}
           disabled={!canGoPrevious}
-          className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+          className={`relative inline-flex items-center px-4 py-2 border text-sm font-semibold rounded-lg transition-all duration-200 ${
             canGoPrevious
-              ? 'text-gray-700 bg-white hover:bg-gray-50'
-              : 'text-gray-400 bg-gray-100 cursor-not-allowed'
+              ? 'text-gray-700 bg-white hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 border-gray-300 hover:border-blue-300 shadow-sm'
+              : 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed'
           }`}
         >
-          Previous
+          Poprzednia
         </button>
         <button
           onClick={() => onPageChange(currentPage + 1)}
           disabled={!canGoNext}
-          className={`ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md ${
+          className={`ml-3 relative inline-flex items-center px-4 py-2 border text-sm font-semibold rounded-lg transition-all duration-200 ${
             canGoNext
-              ? 'text-gray-700 bg-white hover:bg-gray-50'
-              : 'text-gray-400 bg-gray-100 cursor-not-allowed'
+              ? 'text-gray-700 bg-white hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 border-gray-300 hover:border-blue-300 shadow-sm'
+              : 'text-gray-400 bg-gray-100 border-gray-200 cursor-not-allowed'
           }`}
         >
-          Next
+          Następna
         </button>
       </div>
 
       {/* Desktop View */}
       <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
         <div>
-          <p className="text-sm text-gray-700">
-            Showing <span className="font-medium">{startItem}</span> to{' '}
-            <span className="font-medium">{endItem}</span> of{' '}
-            <span className="font-medium">{totalItems}</span> results
+          <p className="text-sm text-gray-700 font-medium">
+            Wyświetlanie <span className="font-bold text-gray-900">{startItem}</span> do{' '}
+            <span className="font-bold text-gray-900">{endItem}</span> z{' '}
+            <span className="font-bold text-gray-900">{totalItems}</span> wyników
           </p>
         </div>
         <div>
-          <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+          <nav className="relative z-0 inline-flex gap-2" aria-label="Pagination">
             {/* Previous Button */}
             <button
               onClick={() => onPageChange(currentPage - 1)}
               disabled={!canGoPrevious}
-              className={`relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 text-sm font-medium ${
+              className={`relative inline-flex items-center px-3 py-2 rounded-lg border text-sm font-semibold transition-all duration-200 ${
                 canGoPrevious
-                  ? 'text-gray-500 bg-white hover:bg-gray-50'
-                  : 'text-gray-300 bg-gray-100 cursor-not-allowed'
+                  ? 'text-gray-700 bg-white hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 border-gray-300 hover:border-blue-300 shadow-sm'
+                  : 'text-gray-300 bg-gray-100 border-gray-200 cursor-not-allowed'
               }`}
             >
-              <span className="sr-only">Previous</span>
               <ChevronLeftIcon className="h-5 w-5" aria-hidden="true" />
+              <span className="ml-1">Poprzednia</span>
             </button>
 
             {/* Page Numbers */}
@@ -130,7 +130,7 @@ export function CasePagination({
                 return (
                   <span
                     key={`ellipsis-${index}`}
-                    className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"
+                    className="relative inline-flex items-center px-2 text-sm font-bold text-gray-500"
                   >
                     ...
                   </span>
@@ -144,10 +144,10 @@ export function CasePagination({
                 <button
                   key={pageNumber}
                   onClick={() => onPageChange(pageNumber)}
-                  className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                  className={`relative inline-flex items-center px-4 py-2 border rounded-lg text-sm font-semibold transition-all duration-200 ${
                     isCurrentPage
-                      ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                      : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                      ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white border-transparent shadow-md transform scale-105 z-10'
+                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:border-blue-300 shadow-sm'
                   }`}
                 >
                   {pageNumber}
@@ -159,13 +159,13 @@ export function CasePagination({
             <button
               onClick={() => onPageChange(currentPage + 1)}
               disabled={!canGoNext}
-              className={`relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 text-sm font-medium ${
+              className={`relative inline-flex items-center px-3 py-2 rounded-lg border text-sm font-semibold transition-all duration-200 ${
                 canGoNext
-                  ? 'text-gray-500 bg-white hover:bg-gray-50'
-                  : 'text-gray-300 bg-gray-100 cursor-not-allowed'
+                  ? 'text-gray-700 bg-white hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 border-gray-300 hover:border-blue-300 shadow-sm'
+                  : 'text-gray-300 bg-gray-100 border-gray-200 cursor-not-allowed'
               }`}
             >
-              <span className="sr-only">Next</span>
+              <span className="mr-1">Następna</span>
               <ChevronRightIcon className="h-5 w-5" aria-hidden="true" />
             </button>
           </nav>

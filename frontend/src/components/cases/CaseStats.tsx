@@ -28,23 +28,63 @@ interface StatCardProps {
 
 function StatCard({ title, value, icon: Icon, color, subtitle }: StatCardProps) {
   const colorClasses = {
-    blue: 'bg-blue-50 text-blue-600',
-    green: 'bg-green-50 text-green-600',
-    yellow: 'bg-yellow-50 text-yellow-600',
-    red: 'bg-red-50 text-red-600',
-    purple: 'bg-purple-50 text-purple-600',
+    blue: {
+      bg: 'bg-gradient-to-br from-blue-50 to-blue-100',
+      border: 'border-blue-200/50',
+      icon: 'bg-blue-200/50 text-blue-600',
+      title: 'text-blue-700',
+      value: 'text-blue-900',
+      hover: 'hover:from-blue-100 hover:to-blue-200'
+    },
+    green: {
+      bg: 'bg-gradient-to-br from-emerald-50 to-emerald-100',
+      border: 'border-emerald-200/50',
+      icon: 'bg-emerald-200/50 text-emerald-600',
+      title: 'text-emerald-700',
+      value: 'text-emerald-900',
+      hover: 'hover:from-emerald-100 hover:to-emerald-200'
+    },
+    yellow: {
+      bg: 'bg-gradient-to-br from-amber-50 to-amber-100',
+      border: 'border-amber-200/50',
+      icon: 'bg-amber-200/50 text-amber-600',
+      title: 'text-amber-700',
+      value: 'text-amber-900',
+      hover: 'hover:from-amber-100 hover:to-amber-200'
+    },
+    red: {
+      bg: 'bg-gradient-to-br from-rose-50 to-rose-100',
+      border: 'border-rose-200/50',
+      icon: 'bg-rose-200/50 text-rose-600',
+      title: 'text-rose-700',
+      value: 'text-rose-900',
+      hover: 'hover:from-rose-100 hover:to-rose-200'
+    },
+    purple: {
+      bg: 'bg-gradient-to-br from-slate-50 to-slate-100',
+      border: 'border-slate-200/50',
+      icon: 'bg-slate-200/50 text-slate-600',
+      title: 'text-slate-700',
+      value: 'text-slate-900',
+      hover: 'hover:from-slate-100 hover:to-slate-200'
+    },
   };
 
+  const classes = colorClasses[color];
+
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6 shadow-sm">
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-sm font-medium text-gray-600">{title}</p>
-        <div className={`p-2 rounded-lg ${colorClasses[color]}`}>
-          <Icon className="h-5 w-5" />
+    <div className={`group relative ${classes.bg} border ${classes.border} rounded-2xl p-6 shadow-lg transition-all duration-300 hover:shadow-xl hover:scale-105 overflow-hidden`}>
+      <div className={`absolute inset-0 bg-gradient-to-br opacity-0 group-hover:opacity-100 transition-opacity duration-300 ${classes.hover}`}></div>
+      <div className="relative z-10">
+        <div className="flex items-center justify-between mb-3">
+          <p className={`text-sm font-semibold ${classes.title}`}>{title}</p>
+          <div className={`p-3 rounded-xl backdrop-blur-sm ${classes.icon}`}>
+            <Icon className="h-6 w-6" />
+          </div>
         </div>
+        <p className={`text-4xl font-bold ${classes.value} mb-1`}>{value}</p>
+        {subtitle && <p className={`text-xs font-medium ${classes.title} opacity-75`}>{subtitle}</p>}
       </div>
-      <p className="text-3xl font-bold text-gray-900">{value}</p>
-      {subtitle && <p className="text-sm text-gray-500 mt-1">{subtitle}</p>}
     </div>
   );
 }

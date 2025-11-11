@@ -84,54 +84,56 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
   return (
     <div className={className}>
       {/* Header */}
-      <div className="mb-4 flex items-center justify-between">
-        <div>
-          <h3 className="text-lg font-semibold text-gray-900">
-            Search Results ({results.length})
-          </h3>
-          <p className="text-sm text-gray-600">
-            Showing {startIndex + 1}-{Math.min(startIndex + resultsPerPage, results.length)} of{' '}
-            {results.length} results
-          </p>
-        </div>
+      <div className="mb-6 p-6 bg-gradient-to-r from-slate-50 to-gray-100 rounded-xl border border-slate-200/50 shadow-sm">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-xl font-bold bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent">
+              Wyniki wyszukiwania ({results.length})
+            </h3>
+            <p className="text-sm text-gray-600 mt-1">
+              Wyświetlanie {startIndex + 1}-{Math.min(startIndex + resultsPerPage, results.length)} z{' '}
+              {results.length} wyników
+            </p>
+          </div>
 
-        {/* Sort Options */}
-        <div className="flex items-center gap-2">
-          <label className="text-sm text-gray-600">Sort by:</label>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as 'relevance' | 'page')}
-            className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="relevance">Relevance</option>
-            <option value="page">Page Number</option>
-          </select>
+          {/* Sort Options */}
+          <div className="flex items-center gap-3">
+            <label className="text-sm font-medium text-gray-700">Sortuj:</label>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as 'relevance' | 'page')}
+              className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm hover:border-blue-400 transition-colors"
+            >
+              <option value="relevance">Trafność</option>
+              <option value="page">Numer strony</option>
+            </select>
+          </div>
         </div>
       </div>
 
       {/* Results List */}
-      <div className="space-y-4">
+      <div className="space-y-5">
         {paginatedResults.map((result, index) => (
           <Card key={`${result.document_id}-${result.page_num}-${index}`} hover>
             <CardContent>
-              <div className="flex items-start justify-between">
+              <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   {/* Score and Page */}
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="flex items-center">
-                      <div className="w-24 bg-gray-200 rounded-full h-2 mr-2">
+                  <div className="flex items-center gap-4 mb-3">
+                    <div className="flex items-center bg-gradient-to-r from-blue-50 to-purple-50 px-3 py-1.5 rounded-full">
+                      <div className="w-20 bg-gray-200 rounded-full h-2 mr-2">
                         <div
-                          className="bg-blue-600 h-2 rounded-full"
+                          className="bg-gradient-to-r from-blue-600 to-purple-600 h-2 rounded-full transition-all duration-300"
                           style={{ width: `${result.score * 100}%` }}
                         />
                       </div>
-                      <span className="text-sm font-medium text-gray-700">
+                      <span className="text-sm font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                         {(result.score * 100).toFixed(0)}%
                       </span>
                     </div>
 
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 px-3 py-1.5 rounded-full">
+                      <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path
                           strokeLinecap="round"
                           strokeLinejoin="round"
@@ -139,15 +141,15 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                           d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                         />
                       </svg>
-                      <span>Dokument {result.document_id.substring(0, 8)}...</span>
-                      <span>•</span>
-                      <span>Strona {result.page_num}</span>
+                      <span className="font-medium">Dokument {result.document_id.substring(0, 8)}...</span>
+                      <span className="text-gray-400">•</span>
+                      <span className="font-medium">Strona {result.page_num}</span>
                     </div>
                   </div>
 
                   {/* Text Excerpt */}
                   <div
-                    className="text-gray-800 leading-relaxed mb-3"
+                    className="text-gray-700 leading-relaxed mb-3 text-base p-4 bg-gray-50/50 rounded-lg border-l-4 border-blue-400"
                     dangerouslySetInnerHTML={{
                       __html: highlightText(
                         result.text.length > 300
@@ -160,19 +162,24 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
 
                   {/* Context Information */}
                   {result.context && (result.context.before.length > 0 || result.context.after.length > 0) && (
-                    <div className="text-xs text-gray-500 mb-2">
-                      Kontekst: {result.context.before.length} fragmentów przed, {result.context.after.length} fragmentów po
+                    <div className="flex items-center gap-2 text-xs text-gray-500 bg-blue-50 px-3 py-1.5 rounded-full inline-flex">
+                      <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
+                        <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                      </svg>
+                      <span className="font-medium">
+                        Kontekst: {result.context.before.length} fragmentów przed, {result.context.after.length} fragmentów po
+                      </span>
                     </div>
                   )}
                 </div>
 
                 {/* Actions */}
-                <div className="ml-4">
+                <div className="flex-shrink-0">
                   <button
                     onClick={() => onViewInContext && onViewInContext(result)}
-                    className="px-3 py-2 text-sm font-medium text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors"
+                    className="px-5 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-slate-700 to-slate-900 hover:from-slate-800 hover:to-black rounded-lg shadow-md hover:shadow-lg transform transition-all duration-200 hover:scale-105"
                   >
-                    View in context
+                    Zobacz w kontekście
                   </button>
                 </div>
               </div>
@@ -183,16 +190,16 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-center gap-2">
+        <div className="mt-8 flex items-center justify-center gap-2">
           <button
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
             disabled={currentPage === 1}
-            className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:border-blue-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
           >
-            Previous
+            Poprzednia
           </button>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-2">
             {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
               // Show first page, last page, current page, and pages around current
               const showPage =
@@ -204,7 +211,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                 // Show ellipsis
                 if (page === currentPage - 2 || page === currentPage + 2) {
                   return (
-                    <span key={page} className="px-2 text-gray-500">
+                    <span key={page} className="px-2 text-gray-500 font-bold">
                       ...
                     </span>
                   );
@@ -216,10 +223,10 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
                 <button
                   key={page}
                   onClick={() => setCurrentPage(page)}
-                  className={`px-3 py-2 border rounded-md text-sm font-medium ${
+                  className={`px-4 py-2 border rounded-lg text-sm font-semibold transition-all duration-200 ${
                     currentPage === page
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                      ? 'bg-gradient-to-r from-slate-700 to-slate-900 text-white border-transparent shadow-md transform scale-105'
+                      : 'border-gray-300 text-gray-700 hover:bg-gradient-to-r hover:from-slate-50 hover:to-slate-100 hover:border-slate-300'
                   }`}
                 >
                   {page}
@@ -231,9 +238,9 @@ export const SearchResults: React.FC<SearchResultsProps> = ({
           <button
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
             disabled={currentPage === totalPages}
-            className="px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-semibold text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 hover:border-blue-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
           >
-            Next
+            Następna
           </button>
         </div>
       )}

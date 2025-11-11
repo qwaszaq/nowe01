@@ -32,8 +32,8 @@ export default function CaseDetails() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="bg-white border-b border-gray-200 px-6 py-8">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-slate-50 to-gray-100">
+        <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200 px-6 py-8">
           <LoadingSkeleton variant="text" count={3} />
         </div>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -46,7 +46,7 @@ export default function CaseDetails() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-slate-50 to-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <ErrorMessage error={error} variant="page" />
         </div>
@@ -59,40 +59,57 @@ export default function CaseDetails() {
   }
 
   const tabs = [
-    { id: 'documents', name: 'Documents', icon: DocumentTextIcon },
-    { id: 'analysis', name: 'Analysis Results', icon: ChartBarIcon },
-    { id: 'activity', name: 'Activity', icon: ClockIcon },
+    { id: 'documents', name: 'Documents', icon: DocumentTextIcon, color: 'blue' },
+    { id: 'analysis', name: 'Analysis Results', icon: ChartBarIcon, color: 'slate' },
+    { id: 'activity', name: 'Activity', icon: ClockIcon, color: 'teal' },
   ];
 
+  const getTabColorClasses = (color: string, isActive: boolean) => {
+    const colors: Record<string, { active: string; inactive: string }> = {
+      blue: {
+        active: 'bg-gradient-to-r from-blue-50 to-blue-100 border-b-4 border-blue-600 text-blue-800',
+        inactive: 'border-transparent text-gray-600 hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-blue-100/50 hover:text-blue-700'
+      },
+      slate: {
+        active: 'bg-gradient-to-r from-slate-100 to-slate-200 border-b-4 border-slate-700 text-slate-800',
+        inactive: 'border-transparent text-gray-600 hover:bg-gradient-to-r hover:from-slate-50/50 hover:to-slate-100/50 hover:text-slate-700'
+      },
+      teal: {
+        active: 'bg-gradient-to-r from-teal-50 to-teal-100 border-b-4 border-teal-600 text-teal-800',
+        inactive: 'border-transparent text-gray-600 hover:bg-gradient-to-r hover:from-teal-50/50 hover:to-teal-100/50 hover:text-teal-700'
+      },
+    };
+    return colors[color] || colors.blue;
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-white via-gray-50 to-gray-100">
       {/* Case Header */}
       <CaseHeader case={caseData} onDelete={handleDelete} />
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Main Content - Add top padding to account for fixed header */}
+      <div className="pt-64 lg:pt-48 px-4 sm:px-6 lg:px-8 pb-8 max-w-7xl mx-auto">
         {/* Stats */}
         <div className="mb-8">
           <CaseStats caseId={caseData.id} />
         </div>
 
         {/* Tabs */}
-        <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+        <div className="bg-white border border-gray-200/60 rounded-xl shadow-md overflow-hidden">
           {/* Tab Navigation */}
-          <div className="border-b border-gray-200">
-            <nav className="-mb-px flex space-x-8 px-6" aria-label="Tabs">
+          <div className="bg-gradient-to-r from-gray-50 to-slate-100/30">
+            <nav className="-mb-px flex gap-2 px-6 pt-4" aria-label="Tabs">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
+                const colorClasses = getTabColorClasses(tab.color, isActive);
                 return (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as TabType)}
                     className={`${
-                      isActive
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center`}
+                      isActive ? colorClasses.active : colorClasses.inactive
+                    } whitespace-nowrap py-3 px-5 font-semibold text-sm flex items-center rounded-t-xl transition-all duration-200 shadow-sm`}
                   >
                     <Icon className="h-5 w-5 mr-2" />
                     {tab.name}

@@ -42,19 +42,19 @@ export function CaseHeader({ case: caseData, onDelete }: CaseHeaderProps) {
 
   return (
     <>
-      <div className="bg-white border-b border-gray-200">
-        <div className="px-6 py-4">
+      <div className="fixed top-16 lg:top-0 left-0 lg:left-64 right-0 z-30 bg-white/80 backdrop-blur-sm border-b border-gray-200 shadow-sm">
+        <div className="px-4 sm:px-6 lg:px-8 py-4">
           {/* Breadcrumb */}
-          <nav className="flex items-center text-sm text-gray-500 mb-4">
-            <Link to="/" className="hover:text-gray-700">
+          <nav className="flex items-center text-sm text-gray-600 mb-4">
+            <Link to="/" className="hover:text-blue-600 transition-colors font-medium">
               Dashboard
             </Link>
-            <ChevronRightIcon className="h-4 w-4 mx-2" />
-            <Link to="/" className="hover:text-gray-700">
+            <ChevronRightIcon className="h-4 w-4 mx-2 text-gray-400" />
+            <Link to="/" className="hover:text-blue-600 transition-colors font-medium">
               Cases
             </Link>
-            <ChevronRightIcon className="h-4 w-4 mx-2" />
-            <span className="text-gray-900 font-medium">{caseData.name}</span>
+            <ChevronRightIcon className="h-4 w-4 mx-2 text-gray-400" />
+            <span className="font-semibold bg-gradient-to-r from-slate-700 to-slate-900 bg-clip-text text-transparent">{caseData.name}</span>
           </nav>
 
           {!isEditing ? (
@@ -63,30 +63,36 @@ export function CaseHeader({ case: caseData, onDelete }: CaseHeaderProps) {
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-2">
-                    <h1 className="text-2xl font-bold text-gray-900">{caseData.name}</h1>
+                    <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">{caseData.name}</h1>
                     <StatusBadge status={caseData.status} />
                   </div>
                   {caseData.description && (
-                    <p className="text-gray-600 max-w-3xl">{caseData.description}</p>
+                    <p className="text-gray-600 max-w-3xl leading-relaxed">{caseData.description}</p>
                   )}
-                  <div className="flex items-center space-x-4 mt-3 text-sm text-gray-500">
-                    <span>Created {format(new Date(caseData.created_at), 'MMMM d, yyyy')}</span>
-                    <span>•</span>
-                    <span>Updated {format(new Date(caseData.updated_at), 'MMMM d, yyyy')}</span>
+                  <div className="flex items-center gap-3 mt-3 text-sm">
+                    <span className="px-3 py-1 bg-blue-50 text-blue-700 rounded-full font-medium">
+                      Created {format(new Date(caseData.created_at), 'MMM d, yyyy')}
+                    </span>
+                    <span className="text-gray-400">•</span>
+                    <span className="px-3 py-1 bg-purple-50 text-purple-700 rounded-full font-medium">
+                      Updated {format(new Date(caseData.updated_at), 'MMM d, yyyy')}
+                    </span>
                     {caseData.document_count !== undefined && (
                       <>
-                        <span>•</span>
-                        <span>{caseData.document_count} documents</span>
+                        <span className="text-gray-400">•</span>
+                        <span className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full font-medium">
+                          {caseData.document_count} documents
+                        </span>
                       </>
                     )}
                   </div>
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center space-x-2 ml-4">
+                <div className="flex items-center gap-3 ml-4">
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    className="inline-flex items-center px-4 py-2 border-2 border-gray-300 rounded-lg text-sm font-semibold text-gray-700 bg-white hover:bg-gradient-to-r hover:from-slate-50 hover:to-slate-100 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-all duration-200 shadow-sm hover:shadow-md"
                   >
                     <PencilIcon className="h-4 w-4 mr-2" />
                     Edit
@@ -96,7 +102,7 @@ export function CaseHeader({ case: caseData, onDelete }: CaseHeaderProps) {
                     <button
                       onClick={handleArchive}
                       disabled={updateCase.isPending}
-                      className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+                      className="inline-flex items-center px-4 py-2 border-2 border-gray-300 rounded-lg text-sm font-semibold text-gray-700 bg-white hover:bg-gradient-to-r hover:from-slate-50 hover:to-slate-100 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 disabled:opacity-50 transition-all duration-200 shadow-sm hover:shadow-md"
                     >
                       <ArchiveBoxIcon className="h-4 w-4 mr-2" />
                       {updateCase.isPending ? 'Archiving...' : 'Archive'}
@@ -105,7 +111,7 @@ export function CaseHeader({ case: caseData, onDelete }: CaseHeaderProps) {
 
                   <button
                     onClick={() => setShowDeleteDialog(true)}
-                    className="inline-flex items-center px-3 py-2 border border-red-300 rounded-md text-sm font-medium text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                    className="inline-flex items-center px-4 py-2 border-2 border-red-300 rounded-lg text-sm font-semibold text-red-700 bg-white hover:bg-red-50 hover:border-red-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-all duration-200 shadow-sm hover:shadow-md"
                   >
                     <TrashIcon className="h-4 w-4 mr-2" />
                     Delete

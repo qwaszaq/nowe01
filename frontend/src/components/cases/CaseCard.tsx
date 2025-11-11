@@ -24,41 +24,41 @@ export function CaseCard({ case: caseItem, onEdit, onDelete, onArchive }: CaseCa
   };
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden group">
+    <div className="bg-white border border-gray-200/60 rounded-xl shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 hover:border-blue-200/60 overflow-hidden group">
       <Link to={`/cases/${caseItem.id}`} className="block p-6">
         <div className="flex items-start justify-between mb-3">
-          <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1">
+          <h3 className="text-lg font-bold text-gray-900 group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 group-hover:bg-clip-text group-hover:text-transparent transition-all line-clamp-1">
             {caseItem.name}
           </h3>
           <StatusBadge status={caseItem.status} />
         </div>
 
-        <p className="text-sm text-gray-600 mb-4 line-clamp-2">
+        <p className="text-sm text-gray-600 mb-4 line-clamp-2 leading-relaxed">
           {truncateDescription(caseItem.description)}
         </p>
 
         <div className="flex items-center justify-between text-xs text-gray-500">
           <div className="flex items-center space-x-4">
-            <span className="flex items-center">
-              <DocumentTextIcon className="h-4 w-4 mr-1" />
-              {caseItem.document_count || 0} docs
+            <span className="flex items-center bg-blue-50 px-2 py-1 rounded-full">
+              <DocumentTextIcon className="h-4 w-4 mr-1 text-blue-600" />
+              <span className="font-medium text-gray-700">{caseItem.document_count || 0} docs</span>
             </span>
-            <span className="flex items-center">
-              <CalendarIcon className="h-4 w-4 mr-1" />
-              {format(new Date(caseItem.created_at), 'MMM d, yyyy')}
+            <span className="flex items-center bg-purple-50 px-2 py-1 rounded-full">
+              <CalendarIcon className="h-4 w-4 mr-1 text-purple-600" />
+              <span className="font-medium text-gray-700">{format(new Date(caseItem.created_at), 'MMM d, yyyy')}</span>
             </span>
           </div>
         </div>
       </Link>
 
       {/* Action Menu */}
-      <div className="border-t border-gray-100 px-6 py-3 bg-gray-50">
+      <div className="border-t border-gray-100 px-6 py-3 bg-gradient-to-r from-gray-50 to-blue-50/30">
         <div className="flex items-center justify-between">
           <Link
             to={`/cases/${caseItem.id}`}
-            className="text-sm font-medium text-blue-600 hover:text-blue-700"
+            className="text-sm font-semibold text-blue-600 hover:text-blue-700 hover:underline transition-all"
           >
-            View Details
+            Szczegóły sprawy →
           </Link>
 
           <Menu as="div" className="relative">
