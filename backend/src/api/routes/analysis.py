@@ -266,7 +266,7 @@ class AnalysisResponse(BaseModel):
 
 
 class SearchRequest(BaseModel):
-    """Request model for semantic search"""
+    """Request model for semantic search with filtering"""
     case_id: Optional[UUID] = Field(
         None,
         description="Case UUID to search within (mutually exclusive with document_id)"
@@ -292,6 +292,22 @@ class SearchRequest(BaseModel):
         ge=0,
         le=5,
         description="Number of surrounding chunks to include as context"
+    )
+
+    # Phase 6: Advanced filtering parameters
+    years: Optional[List[str]] = Field(
+        None,
+        description="Filter results by year (e.g., ['2023', '2024']). Only returns chunks with matching temporal context."
+    )
+    chunk_types: Optional[List[str]] = Field(
+        None,
+        description="Filter by chunk type: 'text', 'table', or 'mixed'. Default: all types."
+    )
+    min_score: Optional[float] = Field(
+        None,
+        ge=0.0,
+        le=2.0,
+        description="Minimum relevance score threshold (0.0-2.0). With Phase 1 & 2 boosts, scores can exceed 1.0. Overrides default threshold."
     )
 
     @validator('case_id')
@@ -799,7 +815,45 @@ async def semantic_search(request: SearchRequest) -> List[SearchResultResponse]:
         # Re-sort after applying expansion-based boosts
         enhanced.sort(key=lambda x: x.get('adjusted_score', x['score']), reverse=True)
 
-        # Apply limit after re-ranking
+        # Phase 6: Apply user-specified filters
+        if request.years or request.chunk_types or request.min_score:
+            filtered = []
+            filter_stats = {'years': 0, 'chunk_types': 0, 'min_score': 0}
+
+            for result in enhanced:
+                # Filter by years
+                if request.years:
+                    temporal_context = result.get('temporal_context', [])
+                    # Check if any requested year is in the chunk's temporal context
+                    if not any(year in temporal_context for year in request.years):
+                        filter_stats['years'] += 1
+                        continue
+
+                # Filter by chunk types
+                if request.chunk_types:
+                    chunk_type = result.get('chunk_type', 'text')
+                    if chunk_type not in request.chunk_types:
+                        filter_stats['chunk_types'] += 1
+                        continue
+
+                # Filter by minimum score
+                if request.min_score:
+                    score = result.get('adjusted_score', result['score'])
+                    if score < request.min_score:
+                        filter_stats['min_score'] += 1
+                        continue
+
+                filtered.append(result)
+
+            enhanced = filtered
+            logger.info(
+                f"Phase 6 filters applied: {len(enhanced)} results remaining "
+                f"(filtered out: {filter_stats['years']} by year, "
+                f"{filter_stats['chunk_types']} by chunk_type, "
+                f"{filter_stats['min_score']} by min_score)"
+            )
+
+        # Apply limit after filtering
         enhanced = enhanced[:request.limit]
 
         # Convert back to SearchResult objects
