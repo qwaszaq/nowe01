@@ -27,6 +27,7 @@ from src.storage.postgres_store import PostgresStore
 from src.storage.redis_store import RedisStore
 from src.core.search.result_enhancer import SearchResultEnhancer
 from src.core.search.query_expander import QueryExpander
+from src.core.search.multi_document_intelligence import MultiDocumentIntelligence
 
 logger = logging.getLogger(__name__)
 
@@ -46,8 +47,9 @@ router = APIRouter(
 # Global state - will be initialized in main app
 _analysis_flow: Optional[AnalysisFlow] = None
 _postgres_store: Optional[PostgresStore] = None
-_result_enhancer = SearchResultEnhancer()  # Initialize result enhancer
-_query_expander = QueryExpander()  # Initialize query expander for Phase 2
+_result_enhancer = SearchResultEnhancer()  # Initialize result enhancer (Phase 1)
+_query_expander = QueryExpander()  # Initialize query expander (Phase 2)
+_multi_doc_intel = MultiDocumentIntelligence()  # Initialize multi-doc intelligence (Phase 4)
 
 
 def set_dependencies(
@@ -1092,6 +1094,182 @@ async def get_document_insights(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate insights: {str(e)}"
         )
+
+
+# ============================================================================
+# PHASE 4: MULTI-DOCUMENT INTELLIGENCE (COMPARISON & TREND ANALYSIS)
+# ============================================================================
+
+class ComparisonRequest(BaseModel):
+    """Request model for multi-document comparison"""
+    case_id: str = Field(..., description="Case UUID")
+    query: str = Field(..., description="Comparison query (e.g., 'porównaj przychody 2023 vs 2024')")
+    years: Optional[List[str]] = Field(None, description="Specific years to compare (auto-detected if not provided)")
+    comparison_type: Optional[str] = Field(None, description="Type: 'temporal', 'trend', or 'auto'")
+    limit: int = Field(5, description="Results per year", ge=1, le=20)
+    include_trend_analysis: bool = Field(True, description="Include trend analysis in response")
+
+
+@router.post(
+    "/compare",
+    status_code=status.HTTP_200_OK,
+    summary="Multi-document temporal comparison (Phase 4)",
+    description="Compare financial data across multiple years using semantic search"
+)
+async def compare_documents(
+    request: ComparisonRequest
+) -> Dict[str, Any]:
+    """
+    Phase 4: Multi-Document Intelligence
+
+    Performs temporal comparisons across multiple years of financial documents.
+
+    Examples:
+        - "porównaj przychody 2023 vs 2024"
+        - "trend zadłużenia 2022-2024"
+        - "zysk netto we wszystkich latach"
+
+    Returns:
+        Comparison results grouped by year with optional trend analysis
+    """
+    try:
+        logger.info(f"Phase 4 comparison request: {request.query}")
+
+        # Detect comparison intent
+        comparison_type = _multi_doc_intel.detect_comparison_intent(request.query)
+        logger.debug(f"Detected comparison type: {comparison_type}")
+
+        # Extract years (from request or auto-detect)
+        if request.years:
+            years = request.years
+            logger.debug(f"Using provided years: {years}")
+        else:
+            years = _multi_doc_intel.extract_years(request.query)
+            if not years:
+                # If no years found, default to available years in case
+                logger.warning("No years detected in query, using all available years")
+                years = ["2023", "2024"]  # Default fallback
+            logger.debug(f"Auto-detected years: {years}")
+
+        # Extract metric
+        metric = _multi_doc_intel.extract_metric(request.query)
+        logger.debug(f"Detected metric: {metric}")
+
+        # Define async search function that wraps our semantic search
+        async def search_function(case_id: str, query: str, years: List[str], limit: int):
+            """Wrapper for semantic search with year filtering"""
+            # Construct search request
+            search_request = SearchRequest(
+                case_id=case_id,
+                query=query,
+                limit=limit,
+                min_score=0.5,
+                years=years  # Use Phase 6 year filtering
+            )
+
+            # Perform search (reuse existing semantic_search logic)
+            return await _perform_semantic_search(search_request)
+
+        # Perform temporal comparison
+        comparison_result = await _multi_doc_intel.compare_temporal(
+            query=metric or request.query,  # Use detected metric or full query
+            case_id=request.case_id,
+            years=years,
+            search_function=search_function,
+            limit=request.limit
+        )
+
+        # Format response
+        response = _multi_doc_intel.format_comparison_response(
+            comparison_result=comparison_result,
+            include_trend_analysis=request.include_trend_analysis
+        )
+
+        logger.info(
+            f"Phase 4 comparison complete: {len(years)} years, "
+            f"{sum(len(r) for r in comparison_result.results_by_year.values())} total results"
+        )
+
+        return response
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Phase 4 comparison failed: {e}", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Multi-document comparison failed: {str(e)}"
+        )
+
+
+async def _perform_semantic_search(request: SearchRequest) -> List[Dict]:
+    """
+    Internal helper to perform semantic search
+    (Reuses existing search logic from semantic_search endpoint)
+    """
+    # This reuses the logic from the existing semantic_search endpoint
+    # but returns the raw results list instead of wrapping in response
+
+    if not _analysis_flow:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Analysis service not initialized"
+        )
+
+    # Phase 2: Query expansion
+    query_expansion = _query_expander.expand_query(
+        request.query,
+        expand_concepts=True,
+        expand_temporal=True
+    )
+
+    # Perform search
+    results = _analysis_flow.search_documents(
+        case_id=request.case_id,
+        query=request.query,
+        limit=request.limit
+    )
+
+    # Phase 1: Enhance results
+    enhanced = _result_enhancer.enhance_results(
+        results=results,
+        query=request.query,
+        temporal_context=query_expansion.get("temporal_context", [])
+    )
+
+    # Phase 2: Apply query expansion boost
+    boost_hints = _query_expander.get_search_boost_hints(query_expansion)
+    if boost_hints['suggested_boost'] > 1.0:
+        for result in enhanced:
+            result['adjusted_score'] = result.get('score', 0) * boost_hints['suggested_boost']
+
+    # Phase 6: Apply filters
+    if request.years or request.chunk_types or request.min_score:
+        filtered = []
+        for result in enhanced:
+            # Filter by years
+            if request.years:
+                temporal_context = result.get('temporal_context', [])
+                if not any(year in temporal_context for year in request.years):
+                    continue
+
+            # Filter by chunk types
+            if request.chunk_types:
+                chunk_type = result.get('chunk_type', 'text')
+                if chunk_type not in request.chunk_types:
+                    continue
+
+            # Filter by minimum score
+            if request.min_score:
+                score = result.get('adjusted_score', result['score'])
+                if score < request.min_score:
+                    continue
+
+            filtered.append(result)
+
+        enhanced = filtered
+
+    return enhanced
 
 
 # ============================================================================
