@@ -112,20 +112,51 @@ class QdrantStore:
         # Prepare points for Qdrant
         points = []
         for idx, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
+            # Base payload fields (always present)
+            payload = {
+                'chunk_id': chunk['chunk_id'],
+                'case_id': str(case_id),
+                'document_id': str(document_id),
+                'page_num': chunk['page_num'],
+                'chunk_idx': chunk['chunk_idx'],
+                'text': chunk['text'],
+                'char_count': chunk['char_count'],
+                'word_count': chunk['word_count'],
+                'is_complete_page': chunk.get('is_complete_page', False)
+            }
+
+            # NEW: Enhanced metadata fields (from StructureAwareChunker)
+            # These fields enable filtering and display of structure-aware chunks
+            chunk_metadata = chunk.get('metadata', {})
+            if chunk_metadata:
+                # Chunk type: text, table, or mixed
+                if 'type' in chunk_metadata:
+                    payload['chunk_type'] = chunk_metadata['type']
+
+                # Temporal context: List of years (e.g., ["2024", "2023"])
+                if 'temporal_context' in chunk_metadata:
+                    temporal_context = chunk_metadata['temporal_context']
+                    if temporal_context:
+                        payload['temporal_context'] = temporal_context
+                        # Also store as comma-separated string for easy text search
+                        payload['temporal_context_str'] = ','.join(temporal_context)
+
+                # Table headers preservation flag
+                if 'has_complete_headers' in chunk_metadata:
+                    payload['has_complete_headers'] = chunk_metadata['has_complete_headers']
+
+                # Table section indicator (e.g., "1/3" means chunk 1 of 3 from this table)
+                if 'table_section' in chunk_metadata:
+                    payload['table_section'] = chunk_metadata['table_section']
+
+                # Table ID for grouping chunks from same table
+                if 'table_id' in chunk_metadata:
+                    payload['table_id'] = chunk_metadata['table_id']
+
             point = PointStruct(
                 id=hash(chunk['chunk_id']) & 0x7FFFFFFFFFFFFFFF,  # Convert to positive int
                 vector=embedding,
-                payload={
-                    'chunk_id': chunk['chunk_id'],
-                    'case_id': str(case_id),
-                    'document_id': str(document_id),
-                    'page_num': chunk['page_num'],
-                    'chunk_idx': chunk['chunk_idx'],
-                    'text': chunk['text'],
-                    'char_count': chunk['char_count'],
-                    'word_count': chunk['word_count'],
-                    'is_complete_page': chunk.get('is_complete_page', False)
-                }
+                payload=payload
             )
             points.append(point)
 

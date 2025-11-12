@@ -15,10 +15,13 @@ from dataclasses import dataclass, asdict
 
 from src.core.extractors.pdf_processor import PDFProcessor
 from src.core.extractors.semantic_chunker import SemanticChunker
+from src.core.extractors.docling_processor import DoclingProcessor
+from src.core.extractors.structure_aware_chunker import StructureAwareChunker
 from src.core.embeddings.e5_embeddings import E5Embeddings
 from src.storage.qdrant_store import QdrantStore
 from src.storage.postgres_store import PostgresStore
 from src.storage.redis_store import RedisStore
+from src.utils.document_classifier import DocumentClassifier, DocumentType
 
 logger = logging.getLogger(__name__)
 
@@ -101,13 +104,17 @@ class DocumentProcessor:
         self,
         pdf_processor: Optional[PDFProcessor] = None,
         semantic_chunker: Optional[SemanticChunker] = None,
+        docling_processor: Optional[DoclingProcessor] = None,
+        structure_chunker: Optional[StructureAwareChunker] = None,
+        document_classifier: Optional[DocumentClassifier] = None,
         embeddings: Optional[E5Embeddings] = None,
         qdrant_store: Optional[QdrantStore] = None,
         postgres_store: Optional[PostgresStore] = None,
         redis_store: Optional[RedisStore] = None,
         chunk_size: int = DEFAULT_CHUNK_SIZE,
         overlap: int = DEFAULT_OVERLAP,
-        batch_size: int = DEFAULT_BATCH_SIZE
+        batch_size: int = DEFAULT_BATCH_SIZE,
+        use_docling_for_financial: bool = True
     ):
         """
         Initialize document processor with dependencies
@@ -115,6 +122,9 @@ class DocumentProcessor:
         Args:
             pdf_processor: PDF extraction handler (optional, creates if None)
             semantic_chunker: Semantic chunking handler (optional, creates if None)
+            docling_processor: Docling structure-aware processor (optional, creates if None)
+            structure_chunker: Structure-aware chunker (optional, creates if None)
+            document_classifier: Document type classifier (optional, creates if None)
             embeddings: E5 embeddings client (optional, creates if None)
             qdrant_store: Qdrant vector store (optional, creates if None)
             postgres_store: PostgreSQL store (optional, creates if None)
@@ -122,13 +132,33 @@ class DocumentProcessor:
             chunk_size: Characters per chunk (default: 750)
             overlap: Character overlap between chunks (default: 120)
             batch_size: Batch size for embedding generation (default: 32)
+            use_docling_for_financial: Enable Docling for financial documents (default: True)
         """
+        # Traditional processors (for general documents and backward compatibility)
         self.pdf_processor = pdf_processor or PDFProcessor()
         self.semantic_chunker = semantic_chunker or SemanticChunker(
             chunk_size=chunk_size,
             chunk_overlap=overlap,
             min_chunk_size=200
         )
+
+        # NEW: Docling processors (for financial documents)
+        self.use_docling_for_financial = use_docling_for_financial
+        if self.use_docling_for_financial:
+            self.docling_processor = docling_processor or DoclingProcessor()
+            self.structure_chunker = structure_chunker or StructureAwareChunker(
+                chunk_size=chunk_size,
+                overlap=overlap,
+                min_chunk_size=200
+            )
+        else:
+            self.docling_processor = None
+            self.structure_chunker = None
+
+        # NEW: Document classifier
+        self.document_classifier = document_classifier or DocumentClassifier()
+
+        # Common dependencies
         self.embeddings = embeddings or E5Embeddings()
         self.qdrant_store = qdrant_store or QdrantStore()
         self.postgres_store = postgres_store or PostgresStore()
@@ -140,7 +170,8 @@ class DocumentProcessor:
 
         logger.info(
             f"DocumentProcessor initialized: chunk_size={chunk_size}, "
-            f"overlap={overlap}, batch_size={batch_size} (using SemanticChunker)"
+            f"overlap={overlap}, batch_size={batch_size}, "
+            f"docling_enabled={self.use_docling_for_financial}"
         )
 
     async def process_document(
@@ -178,14 +209,52 @@ class DocumentProcessor:
 
         stages: Dict[str, Dict[str, Any]] = {}
 
+        # Get original filename for classification
+        original_filename = document_metadata.get('original_filename', document_path_obj.name)
+
         logger.info(
             f"Starting document processing: document_id={document_id}, "
-            f"case_id={case_id}, path={document_path}"
+            f"case_id={case_id}, path={document_path}, filename={original_filename}"
         )
 
         try:
             # Update state to pending
             await self._update_state(document_id, self.STATE_PENDING)
+
+            # =====================================================================
+            # STAGE 0: DOCUMENT CLASSIFICATION (NEW)
+            # =====================================================================
+            # Classify document to route to appropriate processor
+            document_type: DocumentType = self.document_classifier.classify(
+                filename=original_filename
+            )
+
+            logger.info(
+                f"Document classified as: {document_type.upper()} "
+                f"(filename: {original_filename})"
+            )
+
+            # Determine which processors to use based on type and feature flag
+            use_docling = (
+                document_type == "financial"
+                and self.use_docling_for_financial
+                and self.docling_processor is not None
+            )
+
+            if use_docling:
+                logger.info(
+                    f"Routing to DOCLING pipeline "
+                    f"(structure-aware extraction + table-preserving chunking)"
+                )
+            else:
+                logger.info(
+                    f"Routing to PYMUPDF pipeline "
+                    f"(fast text extraction + semantic chunking)"
+                )
+
+            # Store document type in metadata
+            document_metadata['document_type'] = document_type
+            document_metadata['used_docling'] = use_docling
 
             # =====================================================================
             # STAGE 1: VALIDATION
@@ -220,18 +289,26 @@ class DocumentProcessor:
                 raise ValidationError(f"Validation failed: {e}") from e
 
             # =====================================================================
-            # STAGE 2: EXTRACTION
+            # STAGE 2: EXTRACTION (ROUTED)
             # =====================================================================
             stage_start = time.time()
             await self._update_state(document_id, self.STATE_EXTRACTING)
 
             try:
                 # Run blocking PDF extraction in thread pool to avoid blocking event loop
-                import asyncio
-                extracted = await asyncio.to_thread(
-                    self.pdf_processor.extract_all,
-                    document_path
-                )
+                if use_docling:
+                    logger.info("Using DoclingProcessor for structure-aware extraction...")
+                    extracted = await asyncio.to_thread(
+                        self.docling_processor.extract_all,
+                        document_path
+                    )
+                else:
+                    logger.info("Using PDFProcessor for fast text extraction...")
+                    extracted = await asyncio.to_thread(
+                        self.pdf_processor.extract_all,
+                        document_path
+                    )
+
                 pages = extracted['pages']
 
                 if not pages:
@@ -240,12 +317,14 @@ class DocumentProcessor:
                 stages['extraction'] = {
                     'status': 'completed',
                     'duration': time.time() - stage_start,
-                    'stats': extracted['extraction_stats']
+                    'stats': extracted.get('extraction_stats', {}),
+                    'processor': 'docling' if use_docling else 'pymupdf'
                 }
 
                 logger.info(
-                    f"Extraction completed: {len(pages)} pages, "
-                    f"{extracted['extraction_stats']['total_characters']} chars"
+                    f"Extraction completed ({stages['extraction']['processor']}): "
+                    f"{len(pages)} pages, "
+                    f"{extracted.get('extraction_stats', {}).get('total_characters', 'N/A')} chars"
                 )
 
             except Exception as e:
@@ -257,33 +336,44 @@ class DocumentProcessor:
                 raise ExtractionError(f"PDF extraction failed: {e}") from e
 
             # =====================================================================
-            # STAGE 3: CHUNKING
+            # STAGE 3: CHUNKING (ROUTED)
             # =====================================================================
             stage_start = time.time()
             await self._update_state(document_id, self.STATE_CHUNKING)
             logger.info(f"Starting chunking for {len(pages)} pages...")
 
             try:
-                # Run semantic chunking with LangChain
-                logger.info("Calling semantic_chunker.chunk_pages()...")
-                chunks = self.semantic_chunker.chunk_pages(pages)
-                logger.info(f"Semantic chunking returned {len(chunks) if chunks else 0} chunks")
+                # Route to appropriate chunker
+                if use_docling:
+                    logger.info("Using StructureAwareChunker for table-preserving chunking...")
+                    chunks = self.structure_chunker.chunk_document(extracted)
+                else:
+                    logger.info("Using SemanticChunker for semantic boundary chunking...")
+                    chunks = self.semantic_chunker.chunk_pages(pages)
+
+                logger.info(f"Chunking returned {len(chunks) if chunks else 0} chunks")
 
                 if not chunks:
                     raise DocumentProcessingError("No chunks created from pages")
 
-                chunk_stats = self.semantic_chunker.get_chunk_statistics(chunks)
+                # Get chunk statistics (both chunkers support this)
+                if use_docling:
+                    chunk_stats = self.structure_chunker.get_chunk_statistics(chunks)
+                else:
+                    chunk_stats = self.semantic_chunker.get_chunk_statistics(chunks)
 
                 stages['chunking'] = {
                     'status': 'completed',
                     'duration': time.time() - stage_start,
                     'chunk_count': len(chunks),
-                    'stats': chunk_stats
+                    'stats': chunk_stats,
+                    'chunker': 'structure_aware' if use_docling else 'semantic'
                 }
 
                 logger.info(
-                    f"Chunking completed: {len(chunks)} chunks, "
-                    f"avg size: {chunk_stats['avg_chunk_size']:.1f} chars"
+                    f"Chunking completed ({stages['chunking']['chunker']}): "
+                    f"{len(chunks)} chunks, "
+                    f"avg size: {chunk_stats.get('avg_chunk_size', 0):.1f} chars"
                 )
 
             except Exception as e:
