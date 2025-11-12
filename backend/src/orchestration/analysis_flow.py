@@ -343,25 +343,28 @@ class AnalysisFlow:
 
         try:
             # Perform semantic search with context
+            # Use lower threshold (0.3) and get more results (20) for re-ranking
             if context_window > 0:
                 raw_results = await self.search.search_with_context(
                     query=query,
                     case_id=case_id,
                     window_size=context_window,
-                    limit=10,
-                    score_threshold=0.7
+                    limit=20,
+                    score_threshold=0.3
                 )
             else:
                 raw_results = await self.search.search(
                     query=query,
                     case_id=case_id,
-                    limit=10,
-                    score_threshold=0.7
+                    limit=20,
+                    score_threshold=0.3
                 )
 
             # Convert to SearchResult dataclass
-            results = [
-                SearchResult(
+            # Include metadata fields for result enhancement
+            results = []
+            for r in raw_results:
+                result = SearchResult(
                     chunk_id=r['chunk_id'],
                     document_id=r['document_id'],
                     case_id=r['case_id'],
@@ -372,8 +375,10 @@ class AnalysisFlow:
                     chunk_idx=r.get('chunk_idx'),
                     context=r.get('context')
                 )
-                for r in raw_results
-            ]
+                # Add metadata as dynamic attributes for enhancer
+                result.chunk_type = r.get('chunk_type', 'text')
+                result.temporal_context = r.get('temporal_context', [])
+                results.append(result)
 
             logger.info(f"Found {len(results)} results for case query")
             return results

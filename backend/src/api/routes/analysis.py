@@ -25,6 +25,7 @@ from src.orchestration.analysis_flow import (
 )
 from src.storage.postgres_store import PostgresStore
 from src.storage.redis_store import RedisStore
+from src.core.search.result_enhancer import SearchResultEnhancer
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +45,7 @@ router = APIRouter(
 # Global state - will be initialized in main app
 _analysis_flow: Optional[AnalysisFlow] = None
 _postgres_store: Optional[PostgresStore] = None
+_result_enhancer = SearchResultEnhancer()  # Initialize result enhancer
 
 
 def set_dependencies(
@@ -728,7 +730,7 @@ async def semantic_search(request: SearchRequest) -> List[SearchResultResponse]:
 
     try:
         if request.case_id:
-            # Search across case
+            # Search across case - this now returns up to 20 results with 0.5 threshold
             results = await _analysis_flow.query_case(
                 case_id=request.case_id,
                 query=request.query,
@@ -745,13 +747,57 @@ async def semantic_search(request: SearchRequest) -> List[SearchResultResponse]:
                        "Please use case_id to search across all case documents."
             )
 
-        # Apply limit
-        results = results[:request.limit]
+        # Convert SearchResult objects to dicts for enhancement
+        # The raw results from search now include chunk_type and temporal_context
+        results_dicts = []
+        for r in results:
+            # SearchResult might not have these fields, so we need to get them
+            # from the raw search results which are passed through query_case
+            result_dict = {
+                'chunk_id': r.chunk_id,
+                'document_id': r.document_id,
+                'case_id': r.case_id,
+                'page_num': r.page_num,
+                'text': r.text,
+                'score': r.score,
+                'char_count': r.char_count,
+                'chunk_idx': r.chunk_idx,
+                'context': r.context,
+                # These are now available from Qdrant via search_chunks
+                'chunk_type': getattr(r, 'chunk_type', 'text'),
+                'temporal_context': getattr(r, 'temporal_context', [])
+            }
+            results_dicts.append(result_dict)
+
+        # Enhance results (re-rank and generate snippets)
+        enhanced = _result_enhancer.enhance_results(results_dicts, request.query)
+
+        # Apply limit after re-ranking
+        enhanced = enhanced[:request.limit]
+
+        # Convert back to SearchResult objects
+        enhanced_results = [
+            SearchResult(
+                chunk_id=r['chunk_id'],
+                document_id=r['document_id'],
+                case_id=r['case_id'],
+                page_num=r['page_num'],
+                text=r.get('snippet', r['text']),  # Use snippet if available
+                score=r.get('adjusted_score', r['score']),  # Use adjusted score
+                char_count=r['char_count'],
+                chunk_idx=r.get('chunk_idx'),
+                context=r.get('context')
+            )
+            for r in enhanced
+        ]
 
         # Convert to response model
-        response = _convert_search_results(results)
+        response = _convert_search_results(enhanced_results)
 
-        logger.info(f"Search complete: {len(response)} results returned")
+        logger.info(
+            f"Search complete: {len(response)} results returned "
+            f"(enhanced from {len(results)} raw results)"
+        )
 
         return response
 

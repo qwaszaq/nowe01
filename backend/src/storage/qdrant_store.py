@@ -245,7 +245,10 @@ class QdrantStore:
                     'page_num': hit.payload['page_num'],
                     'text': hit.payload['text'],
                     'score': hit.score,
-                    'char_count': hit.payload['char_count']
+                    'char_count': hit.payload['char_count'],
+                    # Include metadata for result enhancement
+                    'chunk_type': hit.payload.get('chunk_type', 'text'),
+                    'temporal_context': hit.payload.get('temporal_context', [])
                 }
                 chunks.append(chunk)
 
