@@ -26,6 +26,7 @@ from src.orchestration.analysis_flow import (
 from src.storage.postgres_store import PostgresStore
 from src.storage.redis_store import RedisStore
 from src.core.search.result_enhancer import SearchResultEnhancer
+from src.core.search.query_expander import QueryExpander
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +47,7 @@ router = APIRouter(
 _analysis_flow: Optional[AnalysisFlow] = None
 _postgres_store: Optional[PostgresStore] = None
 _result_enhancer = SearchResultEnhancer()  # Initialize result enhancer
+_query_expander = QueryExpander()  # Initialize query expander for Phase 2
 
 
 def set_dependencies(
@@ -728,6 +730,19 @@ async def semantic_search(request: SearchRequest) -> List[SearchResultResponse]:
         f"limit={request.limit}, context={request.context_window}"
     )
 
+    # Phase 2: Expand query for better understanding
+    query_expansion = _query_expander.expand_query(
+        request.query,
+        expand_concepts=True,
+        expand_temporal=True
+    )
+
+    logger.info(
+        f"Query expansion: {len(query_expansion['expanded'])} variants, "
+        f"temporal={query_expansion['temporal_context']}, "
+        f"concepts={query_expansion['detected_concepts']}"
+    )
+
     try:
         if request.case_id:
             # Search across case - this now returns up to 20 results with 0.5 threshold
@@ -770,7 +785,19 @@ async def semantic_search(request: SearchRequest) -> List[SearchResultResponse]:
             results_dicts.append(result_dict)
 
         # Enhance results (re-rank and generate snippets)
+        # Phase 2: Use expanded query context for better re-ranking
+        # We pass the original query to the enhancer, which will detect financial terms
+        # The query expansion provides additional context that we log
         enhanced = _result_enhancer.enhance_results(results_dicts, request.query)
+
+        # Apply additional boost based on query expansion analysis
+        boost_hints = _query_expander.get_search_boost_hints(query_expansion)
+        if boost_hints['suggested_boost'] > 1.0:
+            for result in enhanced:
+                result['adjusted_score'] *= boost_hints['suggested_boost']
+
+        # Re-sort after applying expansion-based boosts
+        enhanced.sort(key=lambda x: x.get('adjusted_score', x['score']), reverse=True)
 
         # Apply limit after re-ranking
         enhanced = enhanced[:request.limit]
