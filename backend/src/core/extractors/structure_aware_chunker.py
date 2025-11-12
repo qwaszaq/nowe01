@@ -93,9 +93,9 @@ class StructureAwareChunker:
                 # TIER 3: Page with tables - chunk BOTH tables AND text
                 logger.debug(f"Page {page_num}: Processing {len(page_tables)} tables + narrative text")
 
-                # 1. Chunk all tables (using Tier 1 or Tier 2)
+                # 1. Chunk all tables (using Tier 1 or Tier 2) with context window
                 for table in page_tables:
-                    table_chunks = self._chunk_table(table, page_num)
+                    table_chunks = self._chunk_table(table, page_num, page_text)
                     all_chunks.extend(table_chunks)
 
                 # 2. Chunk narrative text (remove table markdown to avoid duplication)
@@ -123,15 +123,15 @@ class StructureAwareChunker:
 
         return all_chunks
 
-    def _chunk_table(self, table: Dict[str, Any], page_num: int) -> List[Dict[str, Any]]:
+    def _chunk_table(self, table: Dict[str, Any], page_num: int, page_text: str = "") -> List[Dict[str, Any]]:
         """
-        TIER 1 & TIER 2: Smart table chunking
+        TIER 1 & TIER 2: Smart table chunking with context window
 
         DECISION LOGIC:
         - Small table (< 2000 chars, < 50 rows) → Single complete chunk (TIER 1)
         - Large table (>= 2000 chars OR >= 50 rows) → Split with headers (TIER 2)
 
-        This is the KEY innovation for financial document analysis!
+        Phase 3 Enhancement: Now adds context window (sentences around table)
         """
         caption = table.get("caption", "")
         headers = table.get("headers", [])
@@ -152,7 +152,7 @@ class StructureAwareChunker:
                 f"{row_count} rows, {table_size} chars"
             )
             return self._create_complete_table_chunk(
-                complete_table_text, table, page_num
+                complete_table_text, table, page_num, page_text
             )
 
         else:
@@ -161,7 +161,7 @@ class StructureAwareChunker:
                 f"Table {table_id}: TIER 2 (split) - "
                 f"{row_count} rows, {table_size} chars"
             )
-            return self._split_large_table(table, page_num)
+            return self._split_large_table(table, page_num, page_text)
 
     def _should_keep_table_complete(self, table_size: int, row_count: int) -> bool:
         """
@@ -192,14 +192,35 @@ class StructureAwareChunker:
         self,
         table_text: str,
         table: Dict[str, Any],
-        page_num: int
+        page_num: int,
+        page_text: str = ""
     ) -> List[Dict[str, Any]]:
-        """Create single chunk for complete table (TIER 1)"""
+        """
+        Create single chunk for complete table (TIER 1)
+
+        Phase 3 Enhancement: Now adds context window around table
+        """
+        # Phase 3: Extract context window
+        context = self._extract_table_context(table_text, page_text)
+
+        # Build enhanced chunk text with context
+        chunk_parts = []
+        if context['before']:
+            chunk_parts.append(f"Context: {context['before']}")
+            chunk_parts.append("")  # Blank line
+
+        chunk_parts.append(table_text)
+
+        if context['after']:
+            chunk_parts.append("")  # Blank line
+            chunk_parts.append(f"Context: {context['after']}")
+
+        enhanced_text = "\n".join(chunk_parts)
 
         chunk = {
-            "chunk_id": self._generate_chunk_id(table_text),
-            "text": table_text,
-            "char_count": len(table_text),
+            "chunk_id": self._generate_chunk_id(enhanced_text),
+            "text": enhanced_text,
+            "char_count": len(enhanced_text),
             "page_num": page_num,
             "metadata": {
                 "type": "table",
@@ -209,13 +230,14 @@ class StructureAwareChunker:
                 "is_complete_table": True,  # ← KEY FLAG!
                 "chunking_tier": "tier_1_complete",
                 "row_count": len(table.get("rows", [])),
-                "column_count": len(table.get("headers", []))
+                "column_count": len(table.get("headers", [])),
+                "has_context_window": bool(context['before'] or context['after'])
             }
         }
 
         return [chunk]
 
-    def _split_large_table(self, table: Dict[str, Any], page_num: int) -> List[Dict[str, Any]]:
+    def _split_large_table(self, table: Dict[str, Any], page_num: int, page_text: str = "") -> List[Dict[str, Any]]:
         """
         TIER 2: Split large table with header preservation
 
@@ -225,6 +247,8 @@ class StructureAwareChunker:
         3. Batch rows to fit available space
         4. Each chunk = header_block + row_batch
 
+        Phase 3 Enhancement: Add context to first and last chunks
+
         Result: Every chunk has complete context!
         """
         caption = table.get("caption", "")
@@ -232,6 +256,10 @@ class StructureAwareChunker:
         rows = table.get("rows", [])
         temporal_markers = table.get("temporal_markers", [])
         table_id = table.get("table_id", "unknown")
+
+        # Phase 3: Extract context window (we'll add to first/last chunks)
+        table_text_sample = self._build_header_block(caption, headers)
+        context = self._extract_table_context(table_text_sample, page_text)
 
         # Build header block (ALWAYS included in every chunk)
         header_block = self._build_header_block(caption, headers)
@@ -251,14 +279,34 @@ class StructureAwareChunker:
         row_batches = self._batch_rows(rows, available_size, headers)
 
         # Create chunks (each with header_block)
+        # Phase 3: Add context to first and last chunks
         chunks = []
+        total_batches = len(row_batches)
+
         for batch_idx, row_batch in enumerate(row_batches, 1):
             chunk_text = header_block + "\n" + self._format_row_batch(headers, row_batch)
 
+            # Phase 3: Add context window to first and last chunks
+            is_first = (batch_idx == 1)
+            is_last = (batch_idx == total_batches)
+            chunk_parts = []
+
+            if is_first and context['before']:
+                chunk_parts.append(f"Context: {context['before']}")
+                chunk_parts.append("")  # Blank line
+
+            chunk_parts.append(chunk_text)
+
+            if is_last and context['after']:
+                chunk_parts.append("")  # Blank line
+                chunk_parts.append(f"Context: {context['after']}")
+
+            enhanced_text = "\n".join(chunk_parts)
+
             chunk = {
-                "chunk_id": self._generate_chunk_id(chunk_text),
-                "text": chunk_text,
-                "char_count": len(chunk_text),
+                "chunk_id": self._generate_chunk_id(enhanced_text),
+                "text": enhanced_text,
+                "char_count": len(enhanced_text),
                 "page_num": page_num,
                 "metadata": {
                     "type": "table",
@@ -267,9 +315,10 @@ class StructureAwareChunker:
                     "has_complete_headers": True,
                     "is_complete_table": False,  # ← Split table
                     "chunking_tier": "tier_2_split",
-                    "table_section": f"{batch_idx}/{len(row_batches)}",
+                    "table_section": f"{batch_idx}/{total_batches}",
                     "row_count": len(row_batch),
-                    "column_count": len(headers)
+                    "column_count": len(headers),
+                    "has_context_window": (is_first and bool(context['before'])) or (is_last and bool(context['after']))
                 }
             }
 
@@ -430,7 +479,7 @@ class StructureAwareChunker:
                     "page_num": page_num,
                     "metadata": {
                         "type": "text",
-                        "temporal_context": self._extract_years(chunk_text),
+                        "temporal_context": self._extract_temporal_markers(chunk_text),
                         "has_complete_headers": False,
                         "chunking_tier": "tier_3_text"
                     }
@@ -454,8 +503,125 @@ class StructureAwareChunker:
 
         return best_break if best_break > start else end
 
+    def _extract_temporal_markers(self, text: str) -> List[str]:
+        """
+        Extract comprehensive temporal markers from text
+
+        Phase 3 Enhancement: Now detects:
+        - Years (2023, 2024, etc.)
+        - Quarters (Q1, Q2, I kwartał, II kwartał, etc.)
+        - Polish months (styczeń, luty, marzec, etc.)
+        """
+        markers = []
+
+        # Extract years (20XX)
+        years = re.findall(r'\b(20\d{2})\b', text)
+        markers.extend(years)
+
+        # Extract quarters (Q1-Q4, English style)
+        quarters_en = re.findall(r'\b([QK][1-4])\b', text, re.IGNORECASE)
+        markers.extend([q.upper() for q in quarters_en])
+
+        # Extract Polish quarters (I kwartał, II kwartał, etc.)
+        quarters_pl = re.findall(
+            r'\b([IV]{1,3})\s+kwartał',
+            text,
+            re.IGNORECASE
+        )
+        markers.extend([f"{q} kwartał" for q in quarters_pl])
+
+        # Extract Polish months
+        polish_months = [
+            'styczeń', 'stycznia',
+            'luty', 'lutego',
+            'marzec', 'marca',
+            'kwiecień', 'kwietnia',
+            'maj', 'maja',
+            'czerwiec', 'czerwca',
+            'lipiec', 'lipca',
+            'sierpień', 'sierpnia',
+            'wrzesień', 'września',
+            'październik', 'października',
+            'listopad', 'listopada',
+            'grudzień', 'grudnia'
+        ]
+
+        for month in polish_months:
+            if month in text.lower():
+                # Normalize to base form (nominative case)
+                base_month = month.split()[0] if ' ' in month else month.rstrip('a')
+                if base_month not in markers:
+                    markers.append(base_month)
+
+        # Deduplicate while preserving order
+        return list(dict.fromkeys(markers))
+
+    def _extract_table_context(self, table_text: str, page_text: str) -> Dict[str, str]:
+        """
+        Extract context window around table (Phase 3 Enhancement)
+
+        Extracts 2-3 sentences before and 1-2 sentences after the table
+        to provide narrative context for better retrieval.
+
+        Args:
+            table_text: The table text (caption or header block)
+            page_text: Full page text
+
+        Returns:
+            Dict with 'before' and 'after' context strings
+        """
+        context = {'before': '', 'after': ''}
+
+        if not page_text or not table_text:
+            return context
+
+        # Try to find table position using table start marker (caption or first line)
+        table_start_marker = table_text.split('\n')[0][:50]  # Use first 50 chars of first line
+
+        # Find table position in page text
+        table_pos = page_text.find(table_start_marker)
+
+        if table_pos == -1:
+            # Table not found in page text (could be cleaned/processed differently)
+            return context
+
+        # Extract text before table
+        text_before = page_text[:table_pos].strip()
+        if text_before:
+            # Split into sentences (approximate - handles Polish punctuation)
+            sentences_before = re.split(r'[.!?]\s+', text_before)
+            # Get last 2-3 sentences
+            context_sentences = sentences_before[-3:] if len(sentences_before) >= 3 else sentences_before
+            context['before'] = ' '.join(context_sentences).strip()
+            # Limit to 300 chars
+            if len(context['before']) > 300:
+                context['before'] = context['before'][-300:].strip()
+
+        # Extract text after table (find end of table markdown)
+        # Look for end of table markdown pattern
+        remaining_text = page_text[table_pos:]
+        table_end_pattern = r'\|[^\n]+\n(?!\|)'  # Last line with | followed by non-| line
+        match = re.search(table_end_pattern, remaining_text)
+
+        if match:
+            text_after = remaining_text[match.end():].strip()
+            if text_after:
+                # Split into sentences
+                sentences_after = re.split(r'[.!?]\s+', text_after)
+                # Get first 1-2 sentences
+                context_sentences = sentences_after[:2] if len(sentences_after) >= 2 else sentences_after
+                context['after'] = ' '.join(context_sentences).strip()
+                # Limit to 200 chars
+                if len(context['after']) > 200:
+                    context['after'] = context['after'][:200].strip()
+
+        return context
+
     def _extract_years(self, text: str) -> List[str]:
-        """Extract year markers (20XX) from text"""
+        """
+        Extract year markers (20XX) from text
+        Kept for backward compatibility
+        """
         years = re.findall(r'\b(20\d{2})\b', text)
         return list(dict.fromkeys(years))  # Deduplicate while preserving order
 
