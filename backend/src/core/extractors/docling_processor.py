@@ -9,7 +9,12 @@ from pathlib import Path
 from typing import Dict, List, Any, Optional
 import time
 
-from docling.document_converter import DocumentConverter
+try:
+    from docling.document_converter import DocumentConverter
+    DOCLING_AVAILABLE = True
+except ImportError:
+    DOCLING_AVAILABLE = False
+    DocumentConverter = None
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +47,10 @@ class DoclingProcessor:
 
     def _ensure_converter(self):
         """Lazy-load the DocumentConverter (model download on first use)"""
+        if not DOCLING_AVAILABLE:
+            raise ImportError(
+                "Docling is not available. Install it with: pip install docling"
+            )
         if self.converter is None:
             logger.info("Initializing DocumentConverter...")
             start = time.time()

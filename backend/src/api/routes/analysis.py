@@ -1223,19 +1223,38 @@ async def _perform_semantic_search(request: SearchRequest) -> List[Dict]:
         expand_temporal=True
     )
 
-    # Perform search
-    results = _analysis_flow.search_documents(
+    # Perform search using query_case (same as working semantic_search endpoint)
+    results = await _analysis_flow.query_case(
         case_id=request.case_id,
         query=request.query,
-        limit=request.limit
+        context_window=0  # No context window for Phase 4 comparisons
     )
+    logger.info(f"SEARCH RETURNED {len(results)} results for query '{request.query}' with years={request.years}")
+
+    # Convert SearchResult objects to dicts (same as working semantic_search endpoint)
+    results_dicts = []
+    for r in results:
+        result_dict = {
+            'chunk_id': r.chunk_id,
+            'document_id': r.document_id,
+            'case_id': r.case_id,
+            'page_num': r.page_num,
+            'text': r.text,
+            'score': r.score,
+            'char_count': r.char_count,
+            'chunk_idx': r.chunk_idx,
+            'context': r.context,
+            'chunk_type': getattr(r, 'chunk_type', 'text'),
+            'temporal_context': getattr(r, 'temporal_context', [])
+        }
+        results_dicts.append(result_dict)
 
     # Phase 1: Enhance results
     enhanced = _result_enhancer.enhance_results(
-        results=results,
-        query=request.query,
-        temporal_context=query_expansion.get("temporal_context", [])
+        results=results_dicts,
+        query=request.query
     )
+    logger.info(f"ENHANCED: {len(enhanced)} results")
 
     # Phase 2: Apply query expansion boost
     boost_hints = _query_expander.get_search_boost_hints(query_expansion)
@@ -1246,12 +1265,24 @@ async def _perform_semantic_search(request: SearchRequest) -> List[Dict]:
     # Phase 6: Apply filters
     if request.years or request.chunk_types or request.min_score:
         filtered = []
+        logger.info(f"FILTERING: {len(enhanced)} results before year filtering, requested years: {request.years}")
+        kept_count = 0
         for result in enhanced:
             # Filter by years
             if request.years:
                 temporal_context = result.get('temporal_context', [])
-                if not any(year in temporal_context for year in request.years):
-                    continue
+                text = result.get('text', '')
+                # If temporal_context exists and has data, use it for filtering
+                if temporal_context:
+                    if not any(year in temporal_context for year in request.years):
+                        continue
+                    kept_count += 1
+                else:
+                    # Fallback: check if any requested year appears in the text content
+                    if not any(year in text for year in request.years):
+                        continue
+                    kept_count += 1
+                    logger.info(f"  KEPT via fallback: year in text={text[:80]}")
 
             # Filter by chunk types
             if request.chunk_types:
